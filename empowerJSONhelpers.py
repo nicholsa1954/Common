@@ -46,6 +46,11 @@ df
 """
 
 class DatetimeRange:
+    """
+    Two ordered Datetimes determine a DatetimeRange 
+    as the begin and end points.  A third Datetime can
+    be evaluated to determine whether it falls within the range.
+    """
     def __init__(self, dt1, dt2):
         self._dt1 = dt1
         self._dt2 = dt2
@@ -57,6 +62,18 @@ class DatetimeRange:
         return(''.join(['[', str(self._dt1), ' - ', str(self._dt2), ')']))
 
 def ConvertNaiveDatesToUtc(df, date_columns, date_only = True):
+    """_summary_
+
+    Args:
+        df (_type_): Pandas DataField. 
+        date_columns (_type_): list<string> _description_ One or more
+        columns of the DataFram df where we will perform the conversion
+        date_only (bool, optional): Return only a date. Defaults to True.
+
+    Returns:
+        _type_: _description_  DataFrame with spedified columns converted to
+        type DateTime
+    """
     for column in date_columns:
         if date_only:
             df.loc[:, column] = df.loc[:, column].apply(lambda x : pd.to_datetime(x).date())
@@ -104,7 +121,6 @@ def ConvertToDatetime(columns_to_convert, df):
     return df
 
 def ParsePhoneUS(phone_number):
-    # default_phone = '(000) 000-0000'
     default_phone = ''
     if isinstance(phone_number, float) or isinstance(phone_number, int): return default_phone
     assert(isinstance(phone_number, str))
@@ -120,6 +136,16 @@ def ParsePhoneUS(phone_number):
         return default_phone
 
 def CleanPhone(df, phone_column = 'phone'):
+    """
+    Convert a ten-digit string to a more readable (xxx) xxx-xxxx format
+    Args:
+        df (Pandas DataFrame)
+        phone_column (str, optional): Name of the column where
+        the phone numbers are found. Defaults to 'phone'.
+
+    Returns:
+        Inpuyt DataFrame with specified column converted
+    """    """"""
     column_list = list(df.columns)
     default_phone = ''
     if phone_column in column_list:
@@ -132,10 +158,23 @@ def CleanPhone(df, phone_column = 'phone'):
         df.insert(indx, phone_column, df.pop(phone_column))
     return df
     
-"""
-usage: df = InitializeDataFrames(path, file, True, {'sheet_name': '<SheetName>'})
-"""    
+
 def InitializeDataFrames(path, data_file, remote_file = True, kwargs={}):
+    """
+    Given a path and a file name, load a Pandas Dataframe
+    usage: df = InitializeDataFrames(path, file, True, {'sheet_name': '<SheetName>'})
+
+    Args:
+        path (_type_): string _description: the path root
+        data_file (_type_): string _description:  the file name
+        remote_file (bool, optional): _description: Is the file stored on the remote server?
+        Defaults to True.
+        kwargs (dict, optional): _description: Pass a sheet name in the spreadsheet.
+        Defaults to {}.
+
+    Returns:
+        _type_: Pandas DataFrame   
+    """
     if remote_file and not testVPNConnection():
         print('No VPN connection -- returning empty DataFrame.')
         return pd.DataFrame()
@@ -163,10 +202,33 @@ def InitializeDataFrames(path, data_file, remote_file = True, kwargs={}):
 
 
 def InsertDataAtIndex(df, index, label, data):
+    """
+    Insert Series "data" with label "label" at index in DataFrame df
+    Args:
+        df (_type_): Pandas DataFrame
+        index (_type_): int _description: column index (0-based)
+        label (_type_): string _description: label for the series
+        data (_type_): Pandas Series _description: data to be added
+
+    Returns:
+        _type_: Pandas DataFrame, modified as above
+    """
     df.insert(index, label, data)
     return df
 
 def InsertDataAtLabel(df, new_label, next_to_label, data):
+    """
+    Insert Series "data" with label "label" to the right of "next_to_label"
+    in DataFrame df
+    Args:
+        df (_type_): Pandas DataFrame_description_
+        new_label (_type_): string _description: label for the Series
+        next_to_label (_type_): string _description: name of adjacent columns
+        data (_type_): Pandas Series _description: data to be added
+
+    Returns:
+        _type_: Pandas DataFrame, modified as above
+    """
     df[new_label] = data
     col = df.columns.tolist()
     ndx = list(df.columns).index(next_to_label)+1

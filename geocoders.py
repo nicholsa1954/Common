@@ -14,9 +14,9 @@ mapbox_access_token = config['mapbox']['secret_token']
 basic_style = config['mapbox']['basic_style']
 
 key = config['google']['map_key']
-gmaps_key = googlemaps.Client(key=key)
+gmaps_client = googlemaps.Client(key=key)
 
-# substituting the imports abor for these:
+# substituting the imports above for these:
 # def is_blank(myString):
     # if (isinstance(myString, float) | (isinstance(myString, int))): return True
     # if myString and myString.strip():
@@ -36,21 +36,21 @@ gmaps_key = googlemaps.Client(key=key)
 def google_geocode(row, missed = 0):
     if is_blank(row.Address) or is_blank(row.City) or is_blank(row.State):
         missed += 1
-        return pd.Series([])
+        return pd.Series(dtype = 'float64')
     try:
-        add = ', '.join([row.Address, row.City, row.State])
-        g = gmaps_key.geocode(add)
+        addresss = ', '.join([row.Address, row.City, row.State])
+        gc = gmaps_client.geocode(address)
     except TypeError:
         print(row['VANID'], row['Member Name'], row['Last Name'] )
         missed += 1
-        return pd.Series([])     
-    if g:
-        lat = g[0]["geometry"]["location"]["lat"]
-        lng = g[0]["geometry"]["location"]["lng"]
+        return pd.Series(dtype = 'float64')     
+    if gc:
+        lat = gc[0]["geometry"]["location"]["lat"]
+        lng = gc[0]["geometry"]["location"]["lng"]
         return pd.Series([lat, lng])
     else:
         missed += 1
-        return pd.Series([])
+        return pd.Series(dtype = 'float64')
 
 #### usage:        
 ## careful!  Expensive!!
