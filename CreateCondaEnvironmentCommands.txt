@@ -1,0 +1,21 @@
+conda create -c conda-forge -n spyder-env python numpy -y
+
+conda activate spyder-env
+conda config --env --add channels conda-forge
+conda config --env --set channel_priority strict
+
+conda install -c conda-forge scipy pandas matplotlib sympy cython -y
+conda install -c conda-forge dash dash-bootstrap-components dash-core-components dash-html-components plotly folium waitress whitenoise -y
+conda install -c conda-forge flask flask-bootstrap flask-login flask-sqlalchemy flask-migrate flask-moment flask-wtf psycopg2 werkzeug -y
+
+conda install -c conda-forge geopandas geojson GDAL Fiona geographiclib geopy Shapely -y
+conda install -c conda-forge gspread google-api-core google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib googleapis-common-protos -y
+conda install -c conda-forge oauth2client openpyxl phonenumbers pytz dash-auth python-dotenv email_validator -y
+pip install gspread_dataframe gunicorn
+
+conda install -c conda-forge spyder spyder-notebook jupyter
+
+
+
+
+
