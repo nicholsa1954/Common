@@ -5,7 +5,7 @@ import pandas as pd
 import googlemaps
 
 from empowerJSONhelpers import IsBlank as is_blank
-from empowerJSONhelpers import IsNotBlans as is_not_blank
+from empowerJSONhelpers import IsNotBlank as is_not_blank
 
 import configparser
 config = configparser.ConfigParser()
@@ -38,7 +38,7 @@ def google_geocode(row, missed = 0):
         missed += 1
         return pd.Series(dtype = 'float64')
     try:
-        addresss = ', '.join([row.Address, row.City, row.State])
+        address = ', '.join([row.Address, row.City, row.State])
         gc = gmaps_client.geocode(address)
     except TypeError:
         print(row['VANID'], row['Member Name'], row['Last Name'] )

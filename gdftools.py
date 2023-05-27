@@ -73,7 +73,7 @@ def GetCountyBounds(countyBoundsFile:IO, county:str):
     if countyBoundsFile.exists():
         gdf = gpd.read_file(countyBoundsFile)
         gdf = gdf[gdf['COUNTY_NAM'] == county]
-        _, gdf = ComputeRegionCentroids(gdf)
+        focal_point, gdf = ComputeRegionCentroids(gdf)
         gdf['id'] = gdf['COUNTY_NAM']
         gdf['z_layer'] = 0
         gdf['temp'] = gdf['z_layer']
@@ -83,7 +83,7 @@ def GetCountyBounds(countyBoundsFile:IO, county:str):
         with open(outFile) as f:
             gjsn = geojson.load(f)
         os.remove(outFile)
-        return [gdf, gjsn]
+        return [gdf, gjsn, focal_point]
     else:
         print(' '.join(['County boundary file',countyBoundsFile,'not found!']))   
         
