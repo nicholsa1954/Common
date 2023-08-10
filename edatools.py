@@ -14,7 +14,7 @@ import pathlib
 
 
 import sys
-sys.path.append('./')
+sys.path.append('./code/')
 from testVPNConnection import testVPNConnection
 
 epochDate = '1970-01-01 00:00:00'
