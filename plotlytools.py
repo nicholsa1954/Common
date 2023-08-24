@@ -18,7 +18,7 @@ def GetChoroplethMapbox(gdf, gjsn, variable, range, colorscale,
         hoverinfo = hoverinfo,
         showscale = show_scale, visible = True)
 
-def GetScattermapbox(df, size, color, name, showlegend = True):
+def GetScatterMapbox(df, size, color, name, showlegend = True):
     return go.Scattermapbox(
         lat=df.loc[:, 'lat'],
         lon=df.loc[:, 'lng'],
@@ -32,7 +32,7 @@ def GetScattermapbox(df, size, color, name, showlegend = True):
             opacity=1.0,
             allowoverlap=True))
 
-def GetOutlinemapbox(gdf, gjsn, colorscale, line_color, line_width):
+def GetOutlineMapbox(gdf, gjsn, colorscale, line_color, line_width):
     return go.Choroplethmapbox(geojson = gjsn, 
         locations = gdf['id'], 
         z = gdf['z_layer'], 
@@ -48,7 +48,10 @@ def GetOutlinemapbox(gdf, gjsn, colorscale, line_color, line_width):
 def CreateHoverTemplate(gdf):
     result = []
     for row in gdf.itertuples():
-        pct = f"""{100*row.LatinxVAPPct:.0f}%"""
+        # pct = f"""{100*row.LatinxVAPPct:.0f}%"""
+        # geopandas truncates header names to 10 characters
+        # this becomes a problem when we reconstruct a gdf from a geojson file
+        pct = f"""{100*row.LatinxVAPP:.0f}%"""  
         row1 = ' '.join(['<b>'+ctv_map[row.CTV], row.MCD_NAME, 'Ward', row.WARDID+'</b>'])
         row2 = ' '.join(['Latinx VAP:', str(row.LatinxVAP)])
         row3 = ' '.join(['Total VAP:', str(row.VAP)])

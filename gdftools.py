@@ -1,5 +1,6 @@
 import pandas as pd
 import geopandas as gpd
+import shapely
 import geojson
 import pathlib
 from pathlib import Path
@@ -11,7 +12,7 @@ from testVPNConnection import testVPNConnection
 
 common_cols = ['id', 'lat', 'lon', 'geometry', 'z_layer']
 
-county_cols = [ 'GEOID', 'CNTY_FIPS', 'CNTY_NAME',  'SUPER_FIPS', *common_cols]
+county_cols = [ 'GEOID', 'CNTY_FIPS', 'CNTY_NAME',  *common_cols]
 
 city_cols = ['OBJECTID',  'MCD_FIPS', 'MCD_NAME',  'CTV', *common_cols]
 
@@ -107,10 +108,14 @@ def ComputeRegionCentroids(gdf):
 
 	# We want the center point of each polygon
 	idx = list(gdf.columns).index('geometry')
-	gdf.insert(idx, "lat",
-		gdf.Center_point.map(lambda p: p.y), True)
-	gdf.insert(idx + 1, "lon",
-		gdf.Center_point.map(lambda p: p.x), True)
+	try:
+		gdf.insert(idx, "lat",
+			gdf.Center_point.map(lambda p: p.y), True)
+		gdf.insert(idx + 1, "lon",
+			gdf.Center_point.map(lambda p: p.x), True)
+	except shapely.errors.GEOSException:
+		gdf.insert(idx, "lat", 0.0)
+		gdf.insert(idx + 1, "lon", 0.0)
 
 	# Don't need it any more
 	gdf.drop('Center_point', axis=1, inplace=True)	  
@@ -137,7 +142,7 @@ def ComputeAreaInKMSq(gdf):
 	return float(areaInKMSq.iloc[0])	
 	
 	
-def GetCountyBounds(county_bounds_file:IO, county_name:str, write_excel = False):
+def GetCountyBounds(county_bounds_file:IO, county_name = None, write_files = False):
 	"""
 	GetCountyBounds function retrieves the county bounds for a given county name.
 
@@ -154,14 +159,15 @@ def GetCountyBounds(county_bounds_file:IO, county_name:str, write_excel = False)
 	"""
 	if county_bounds_file.exists():
 		gdf = gpd.read_file(county_bounds_file)
-		gdf = gdf[gdf['COUNTY_NAM'] == county_name]
+		if county_name is not None:
+			gdf = gdf[gdf['COUNTY_NAM'] == county_name]
 		focal_point, gdf = ComputeRegionCentroids(gdf)
 		gdf['id'] = gdf['COUNTY_NAM']
 		gdf['z_layer'] = [0]*len(gdf)
 		gdf.reset_index(inplace=True)
-		gjsn = ConvertGDFtoGJSN(gdf[common_cols])
+		gjsn = ConvertGDFtoGJSN(gdf)
 
-		if write_excel:
+		if write_files:
 			out_file = pathlib.Path(f'./static/{county_name}_bounds.geojson')
 			if not out_file.exists():
 				gdf.to_file(out_file, driver='GeoJSON')
@@ -466,7 +472,6 @@ def GetAldermanicDistrictsInBounds(aldermanic_districts_file:IO, bounds_gdf):
 		print(' '.join(['Common council district file', aldermanic_districts_file, 'not found!']))
 
 
-
 def GetAldermanicDistrictsInCity(aldermanic_districts_file:IO, county_name:str, city_name:str, using_local_file = False):
 	"""
 	GetAldermanicDistrictsInCity is a function that takes in four parameters:
@@ -585,6 +590,7 @@ def GetWardsInState(ward_bounds_file:IO):
 		_, gdf = ComputeRegionCentroids(gdf)
 		# gdf['STR_WARDS'] = gdf['STR_WARDS'].apply(lambda x : x.lstrip('0'))
 		gdf['id'] = gdf['LABEL']
+		gdf['z_layer'] = [0]*len(gdf)
 		gdf.reset_index(inplace=True)
 		gjsn = ConvertGDFtoGJSN(gdf[common_cols])  
 		return [gdf, gjsn]
@@ -708,7 +714,7 @@ def GetCityInCounty(county_ward_gdf, county_name, city_name):
 def ComputeIdForMapLabel(row):
 	return ' '.join([row['CTV'], row['MCD_NAME'], 'Ward', row['WARDID']])
 
-def GetWardDataFromList(in_file:IO, county_list, headers, numeric, geometry):
+def GetWardDataFromList(in_file:IO, county_list, headers, numeric, geometry, write_files = False):
 	"""
 	GetWardDataFromList is a function that reads ward data from a file and performs various operations on it.
 
@@ -745,13 +751,17 @@ def GetWardDataFromList(in_file:IO, county_list, headers, numeric, geometry):
 
 		gdf['id'] = gdf.apply(lambda row : ComputeIdForMapLabel(row), axis = 1)
 		gdf['z_layer'] = [0]*len(gdf)
+  
+		shp_file = pathlib.Path('./static/target_counties.shp')
+		if write_files and not shp_file.exists():		
+			gdf.to_file(shp_file, driver = 'ESRI Shapefile')
 
 		return gdf
 	else:
 		print(' '.join(['Ward data file', in_file,'not found!']))
 	
 	
-def GetWardDataForCounty(counties_gdf, county_name, vap_multiplier = 2.0, write_excel = False):
+def GetWardDataForCounty(counties_gdf, county_name, vap_multiplier = 2.0, write_files = False):
 	"""
 	Retrieves ward data from a larger gdf based on the provided county name.
 
@@ -760,7 +770,7 @@ def GetWardDataForCounty(counties_gdf, county_name, vap_multiplier = 2.0, write_
 		county_name (str): The name of the county to retrieve ward data for.
 		vap_multiplier (float, optional): The multiplier used to calculate the target ward cutoff. 
 			Defaults to 2.0.
-		write_excel (bool, optional): Specifies whether to write the data to an Excel file. 
+		write_files (bool, optional): Specifies whether to write the data to an Excel file. 
 			Defaults to False.
 
 	Returns:
@@ -808,29 +818,45 @@ def GetWardDataForCounty(counties_gdf, county_name, vap_multiplier = 2.0, write_
 	gdf['AsianVAPPct'] = gdf['AsianVAPPct'].astype(float)
 		
 	gdf.reset_index(inplace = True)
-	gjsn = ConvertGDFtoGJSN(gdf[common_cols])
+	cols = ['MCD_NAME', 'CTV', 'WARDID', *county_cols, 'LatinxVAPPct','LatinxVAP', 'VAP']
+	gjsn = ConvertGDFtoGJSN(gdf[cols])
  
-	if write_excel:
+	if write_files:
 		out_file = pathlib.Path('./static/' + county_name + '_population.geojson')
 		if not out_file.exists():
 			gdf.to_file(out_file, driver='GeoJSON')
 
 		out_file = pathlib.Path('./static/' + county_name + '_population.shp')
 		if not out_file.exists():
-			gdf.to_file(out_file)
+			gdf.to_file(out_file, driver = 'ESRI Shapefile')
+   
+		out_file = pathlib.Path('./static/' + county_name + '_population_data.xlsx')
+		if not out_file.exists():
+			data = {'target_ward_cutoff': target_ward_cutoff, 'focal_point_lat': focal_point[0], 'focal_point_lon': focal_point[1]}
+			df = pd.DataFrame(data, index = [0])
+			df.to_excel(out_file)
+   
+		out_file = pathlib.Path('./static/' + county_name + '_population_arrays.xlsx')
+		if not out_file.exists():
+			# df = pd.DataFrame({'id_list': id_list})   
+			data = {'ward_list': ward_list, 'pop_list': pop_list}
+			df = pd.DataFrame.from_dict(data)
+			# df3 = pd.DataFrame({'pop_list': pop_list})
+			# df = pd.concat([df, df2, df3], axis = 1, ignore_index = True)
+			df.to_excel(out_file)
 
 	return [target_ward_cutoff, id_list, ward_list, pop_list, focal_point, gdf, gjsn]
 
 
 		
-def GetTargetWardsInCounty(gdf, target_ward_cutoff, write_excel = False):
+def GetTargetWardsInCounty(gdf, target_ward_cutoff, write_files = False):
 	"""
 	Retrieves the target wards within the specified bounds from the given GeoDataFrame.
 
 	Args:
 		gdf (GeoDataFrame): The input GeoDataFrame.
 		target_ward_cutoff (float): The threshold value for the LatinxVAP column.
-		write_excel (bool, optional): Flag indicating whether to write the result to an Excel file. Defaults to False.
+		write_files (bool, optional): Flag indicating whether to write the result to an Excel file. Defaults to False.
 
 	Returns:
 		list: A list containing two elements:
@@ -842,7 +868,7 @@ def GetTargetWardsInCounty(gdf, target_ward_cutoff, write_excel = False):
 	gdf.reset_index(inplace = True)
 	gjsn = ConvertGDFtoGJSN(gdf)
 
-	if write_excel:
+	if write_files:
 		out_file = pathlib.Path('./static/' + county_name + '_targetwards.geojson')
 		if not out_file.exists():
 			gdf.to_file(out_file, driver='GeoJSON')
@@ -858,14 +884,14 @@ def GetTargetWardsInCounty(gdf, target_ward_cutoff, write_excel = False):
 	return [gdf, gjsn]	
 	
 	
-def GetPassiveWardsInCounty(gdf, target_ward_cutoff, write_excel = False):
+def GetPassiveWardsInCounty(gdf, target_ward_cutoff, write_files = False):
 	"""
 	Get the passive wards in bounds.
 
 	Parameters:
 	- gdf: The GeoDataFrame containing the data.
 	- target_ward_cutoff: The cutoff value for LatinxVAP.
-	- write_excel: Optional parameter indicating whether to write the data to an Excel file. Default is False.
+	- write_files: Optional parameter indicating whether to write the data to an Excel file. Default is False.
 
 	Returns:
 	- A list containing the GeoDataFrame and the geojson representation of the data.
@@ -875,7 +901,7 @@ def GetPassiveWardsInCounty(gdf, target_ward_cutoff, write_excel = False):
 	gdf.reset_index(inplace = True)
 	gjsn = ConvertGDFtoGJSN(gdf)
  
-	if write_excel:
+	if write_files:
 		out_file = pathlib.Path('./static/' + county_name + '_passivewards.geojson')
 		if not out_file.exists():
 			gdf.to_file(out_file, driver='GeoJSON')
@@ -918,29 +944,29 @@ def TrimGDFToBounds(gdf, bounds, bounds_area = None):
 	
  ############################
  ##### functions to support asynchronous processing
-def GetDistrictsInBounds(datafile, rename_column, bounds_gdf = None):
-	"""
-	GetDistrictsInBounds is a function that reads a datafile and retrieves the districts within a specified bounding box. It takes the following parameters:
+import geopandas as gpd
 
-	- datafile: The path to the datafile.
-	- rename_column: The name of the column to be renamed.
-	- bounds_gdf (optional): A GeoDataFrame representing the bounding box.
-
-	If the datafile exists, the function reads the file and checks if bounds_gdf is provided. If bounds_gdf is provided, the function reads the file with the specified bounding box using the `bbox` parameter of `gpd.read_file()`. Otherwise, it reads the file without any bounding box. The function then converts the data to the EPSG:4326 coordinate reference system using `gdf.to_crs()`. It trims the GeoDataFrame to the specified bounds using the `TrimGDFToBounds()` function. The function renames the column specified by `rename_column` to 'id' using `gdf.rename()`. It adds a 'z_layer' column with default value 0 for each row in the GeoDataFrame. The function computes the region centroids using the `ComputeRegionCentroids()` function and assigns the result to `focal_point` and `gdf`. Finally, it returns a list containing the name of the datafile and the common columns of `gdf`.
-
-	If the datafile does not exist, the function prints a message indicating that the file was not found.
-
-	"""
-	if datafile.exists():
-		if bounds_gdf is not None:
-			gdf = gpd.read_file(datafile, bbox = bounds_gdf)
-		else: gdf = gpd.read_file(datafile)
-		gdf = gdf.to_crs('epsg:4326')
-		gdf = TrimGDFToBounds(gdf, bounds_gdf)
-		gdf = gdf.rename(columns={rename_column: 'id'})   
-		gdf['z_layer'] = [0]*len(gdf)
-		[focal_point, gdf] = ComputeRegionCentroids(gdf)
-		return gdf[common_cols]
-	else:
-		print(' '.join(['Data file', datafile,'not found!']))
+def GetDistrictsInBounds(datafile, rename_column, bounds_gdf=None):
+    """
+    Reads a datafile containing district information and returns the districts within specified bounds.
+    
+    Args:
+        datafile (str): Path to the datafile.
+        rename_column (str): Name of the column to be renamed as 'id'.
+        bounds_gdf (GeoDataFrame, optional): Bounds to filter the districts. Defaults to None.
+        
+    Returns:
+        GeoDataFrame: Districts within the specified bounds.
+    """
+    if datafile.exists():
+        if bounds_gdf is not None:
+            gdf = gpd.read_file(datafile, bbox=bounds_gdf)
+        else:
+            gdf = gpd.read_file(datafile)
+        gdf = gdf.rename(columns={rename_column: 'id'})
+        gdf['z_layer'] = [0] * len(gdf)
+        focal_point, gdf = ComputeRegionCentroids(gdf)
+        return TrimGDFToBounds(gdf[common_cols], bounds_gdf)
+    else:
+        print(' '.join(['Data file', datafile, 'not found!']))
  
