@@ -17,6 +17,9 @@ def GetChoroplethMapbox(gdf, gjsn, variable, range, colorscale,
         marker_opacity = marker_opacity,
         hoverinfo = hoverinfo,
         showscale = show_scale, visible = True)
+		
+def GetScatterPlot(df, x, y, mode, name, showlegend = True):
+    return go.Scatter(x=df[x], y = df[y], mode = mode, name = name, text = name, showlegend = showlegend)
 
 def GetScatterMapbox(df, size, color, name, showlegend = True):
     return go.Scattermapbox(

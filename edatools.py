@@ -1,19 +1,15 @@
 
-import pandas as pd
-import pathlib
-from pathlib import Path
-import phonenumbers
-import time
-from time import strftime, gmtime
 import datetime
-from datetime import date, datetime, timedelta, timezone
-import pytz
-import json
-import numpy as np
 import pathlib
-
-
 import sys
+import time
+from pathlib import Path
+from time import gmtime, strftime
+
+import numpy as np
+import pandas as pd
+import phonenumbers
+
 sys.path.append('./code/')
 from testVPNConnection import testVPNConnection
 
@@ -235,3 +231,19 @@ def InsertDataAtLabel(df, new_label, next_to_label, data):
     col.insert(ndx, col.pop()) #loc is the column's index you want to insert into
     df = df[col]
     return df
+	
+def ColumnSwap(df, col1:str, col2:str):
+	"""
+	swap position of 2 existing columns in a dataframe
+	"""
+	df = df[[col1 if col == col2 else col2 if col == col1 else col for col in df.columns]]
+	return df
+	
+	
+def ColumnMove(df, col_name:str, new_index:int):
+	""" reposition/reorder col to new index in df """
+	col = df.pop(col_name)
+	df.insert(new_index, col.name, col)	
+	return df
+	
+	

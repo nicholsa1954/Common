@@ -1,13 +1,14 @@
-import pandas as pd
-import geopandas as gpd
-import shapely
-import geojson
 import pathlib
-from pathlib import Path
-import time
 import random
-import os
+import time
+from pathlib import Path
 from typing import IO
+
+import geojson
+import geopandas as gpd
+import pandas as pd
+import shapely
+
 from testVPNConnection import testVPNConnection
 
 common_cols = ["id", "lat", "lon", "geometry", "z_layer"]
@@ -224,8 +225,10 @@ def GetBoundedGeometry(gdf, bounds, compute_focal_point=True):
     if compute_focal_point:
         [focal_point, gdf] = ComputeRegionCentroids(gdf)
 
-    gdf["DISTRICT"] = gdf["DISTRICT"].map(lambda x: x.lstrip("0"))
-    gdf = gdf[["DISTRICT", "lat", "lon", "geometry"]]
+    if "DISTRICT" in list(gdf.columns):
+        gdf["DISTRICT"] = gdf["DISTRICT"].map(lambda x: x.lstrip("0"))
+        gdf = gdf[["DISTRICT", "lat", "lon", "geometry"]]
+	
     return [focal_point, gdf]
 
 
@@ -1054,7 +1057,6 @@ def TrimGDFToBounds(gdf, bounds, bounds_area=None):
     ##### functions to support asynchronous processing
 
 
-import geopandas as gpd
 
 
 def GetDistrictsInBounds(datafile, rename_column, bounds_gdf=None):
