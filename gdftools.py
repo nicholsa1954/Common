@@ -73,7 +73,6 @@ def InitializeGeoDataFrames(path, data_file, remote_file=True, kwargs={}):
     start_time = time.time()
     if sfx == ".shp":
         gdf = gpd.read_file(in_file, typ="series", orient="records", **kwargs)
-        in_file.close()
     else:
         print("unknown file type:", sfx)
         return gpd.GeoDataFrame()
