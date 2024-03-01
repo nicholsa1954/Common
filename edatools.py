@@ -213,7 +213,7 @@ def InsertDataAtIndex(df, index, label, data):
     df.insert(index, label, data)
     return df
 
-def InsertDataAtLabel(df, new_label:str, next_to_label:str, data):
+def InsertDataAtLabel(df, new_label, next_to_label, data, insert_after = True):
     """
     Insert Series "data" with label "label" to the right of "next_to_label"
     in DataFrame df
@@ -226,10 +226,13 @@ def InsertDataAtLabel(df, new_label:str, next_to_label:str, data):
     Returns:
         _type_: Pandas DataFrame, modified as above
     """
-    ndx = list(df.columns).index(next_to_label)+1
+    if insert_after:
+        ndx = list(df.columns).index(next_to_label)+1
+    else: 
+        ndx = list(df.columns).index(next_to_label)-1
     df.insert(ndx, new_label, data)
     return df
-	
+    
 def ColumnSwap(df, col1:str, col2:str):
 	"""
 	swap position of 2 existing columns in a dataframe
