@@ -13,11 +13,11 @@ import phonenumbers
 sys.path.append('./code/')
 from testVPNConnection import testVPNConnection
 
-epochDate = '1970-01-01T00:00:00'
-cutoffDate = '2021-11-01T00:00:00'
+epochDate = '1970-01-01 00:00:00'
+cutoffDate = '2021-11-01 00:00:00'
 
-beginningOfTime = datetime.date.fromisoformat(epochDate)
-empowerCutoffDate = datetime.date.fromisoformat(cutoffDate)
+beginningOfTime = datetime.datetime.fromisoformat(epochDate)
+empowerCutoffDate = datetime.datetime.fromisoformat(cutoffDate)
 
 """
 def Op1(x): return x*x
