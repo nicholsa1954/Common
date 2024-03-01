@@ -187,13 +187,12 @@ def InitializeDataFrames(path, data_file, remote_file = True, kwargs={}):
 
     sfx = pathlib.Path(data_file).suffix
     start = time.time()
-    with inFile.open(mode = 'r') as fh:
-        if sfx == '.json':
-            df = pd.read_json(fh, typ = 'series', orient = 'records', **kwargs)
-        elif sfx == '.csv':
-            df = pd.read_csv(fh,  **kwargs)
-        elif sfx == '.xlsx':
-            df = pd.read_excel(fh, **kwargs)
+    if sfx == '.json':
+        df = pd.read_json(inFile, typ = 'series', orient = 'records', **kwargs)
+    elif sfx == '.csv':
+        df = pd.read_csv(inFile,  **kwargs)
+    elif sfx == '.xlsx':
+        df = pd.read_excel(inFile, **kwargs)
     print('Data loaded, elapsed time:', round((time.time() - start), 2), 'seconds.')
     return df
 
