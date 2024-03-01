@@ -16,8 +16,8 @@ from testVPNConnection import testVPNConnection
 epochDate = '1970-01-01T00:00:00'
 cutoffDate = '2021-11-01T00:00:00'
 
-beginningOfTime = datetime.datetime.fromisoformat(epochDate)
-empowerCutoffDate = datetime.datetime.fromisoformat(cutoffDate)
+beginningOfTime = datetime.date.fromisoformat(epochDate)
+empowerCutoffDate = datetime.date.fromisoformat(cutoffDate)
 
 """
 def Op1(x): return x*x
@@ -187,12 +187,13 @@ def InitializeDataFrames(path, data_file, remote_file = True, kwargs={}):
 
     sfx = pathlib.Path(data_file).suffix
     start = time.time()
-    if sfx == '.json':
-        df = pd.read_json(inFile, typ = 'series', orient = 'records', **kwargs)
-    elif sfx == '.csv':
-        df = pd.read_csv(inFile,  **kwargs)
-    elif sfx == '.xlsx':
-        df = pd.read_excel(inFile, **kwargs)
+    with inFile.open(mode = 'r') as fh:
+        if sfx == '.json':
+            df = pd.read_json(fh, typ = 'series', orient = 'records', **kwargs)
+        elif sfx == '.csv':
+            df = pd.read_csv(fh,  **kwargs)
+        elif sfx == '.xlsx':
+            df = pd.read_excel(fh, **kwargs)
     print('Data loaded, elapsed time:', round((time.time() - start), 2), 'seconds.')
     return df
 
@@ -212,7 +213,7 @@ def InsertDataAtIndex(df, index, label, data):
     df.insert(index, label, data)
     return df
 
-def InsertDataAtLabel(df, new_label, next_to_label, data):
+def InsertDataAtLabel(df, new_label:str, next_to_label:str, data):
     """
     Insert Series "data" with label "label" to the right of "next_to_label"
     in DataFrame df
@@ -225,11 +226,8 @@ def InsertDataAtLabel(df, new_label, next_to_label, data):
     Returns:
         _type_: Pandas DataFrame, modified as above
     """
-    df[new_label] = data
-    col = df.columns.tolist()
     ndx = list(df.columns).index(next_to_label)+1
-    col.insert(ndx, col.pop()) #loc is the column's index you want to insert into
-    df = df[col]
+    df.insert(ndx, new_label, data)
     return df
 	
 def ColumnSwap(df, col1:str, col2:str):
