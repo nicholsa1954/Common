@@ -73,11 +73,11 @@ def GetHoverlabelMapbox(gdf, template, color):
         hoverlabel=dict(
             bgcolor=color))
 
-def GetStaticLabelMapbox(gdf, color, size):
+def GetStaticLabelMapbox(gdf, color, size, hoverinfo = 'skip'):
     return go.Scattermapbox(
     mode='text',
     name = '',
-    hoverinfo = 'skip',
+    hoverinfo = hoverinfo,
     lat=gdf.loc[:, 'lat'],
     lon=gdf.loc[:, 'lon'],
     text = gdf.loc[:, 'WARDID'],
