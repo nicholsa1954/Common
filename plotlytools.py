@@ -2,7 +2,7 @@ ctv_map = {'C':'City of', 'V':'Village of', 'T':'Town of'}
 
 import plotly.graph_objs as go
 
-def GetChoroplethMapbox(gdf, gjsn, variable, range, colorscale, 
+
                         marker_line_color, marker_line_width, marker_opacity,
                         hoverinfo, show_scale):
     return go.Choroplethmapbox(geojson = gjsn,
@@ -24,7 +24,7 @@ def GetScatterPlot(df, x, y, mode, name, showlegend = True):
 def GetScatterMapbox(df, size, color, name, showlegend = True):
     return go.Scattermapbox(
         lat=df.loc[:, 'lat'],
-        lon=df.loc[:, 'lng'],
+        lon=df.loc[:, 'lon'],
         showlegend = showlegend,
         name=name,
         mode = 'markers',
@@ -73,14 +73,14 @@ def GetHoverlabelMapbox(gdf, template, color):
         hoverlabel=dict(
             bgcolor=color))
 
-def GetStaticLabelMapbox(gdf, color, size, hoverinfo = 'skip'):
+def GetStaticLabelMapbox(gdf, color, size, text_field = 'WARDID', hoverinfo = 'skip'):
     return go.Scattermapbox(
     mode='text',
     name = '',
     hoverinfo = hoverinfo,
     lat=gdf.loc[:, 'lat'],
     lon=gdf.loc[:, 'lon'],
-    text = gdf.loc[:, 'WARDID'],
+    text = gdf.loc[:, text_field],
     opacity=1.0,
     textfont={"color":color,"size":size},
     texttemplate = '%{text}',
