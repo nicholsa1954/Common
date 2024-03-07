@@ -2,7 +2,7 @@ ctv_map = {'C':'City of', 'V':'Village of', 'T':'Town of'}
 
 import plotly.graph_objs as go
 
-
+def GetChoroplethMapbox(gdf, gjsn, variable, range, colorscale, 
                         marker_line_color, marker_line_width, marker_opacity,
                         hoverinfo, show_scale):
     return go.Choroplethmapbox(geojson = gjsn,
