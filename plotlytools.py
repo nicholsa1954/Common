@@ -4,7 +4,7 @@ import plotly.graph_objs as go
 
 def GetChoroplethMapbox(gdf, gjsn, variable, range, colorscale, 
                         marker_line_color, marker_line_width, marker_opacity,
-                        hoverinfo, show_scale):
+                        hoverinfo, show_scale, visible = True):
     return go.Choroplethmapbox(geojson = gjsn,
         locations = gdf['id'],
         z = gdf[variable],
@@ -16,7 +16,8 @@ def GetChoroplethMapbox(gdf, gjsn, variable, range, colorscale,
         marker_line_width = marker_line_width, 
         marker_opacity = marker_opacity,
         hoverinfo = hoverinfo,
-        showscale = show_scale, visible = True)
+        showscale = show_scale, 
+        visible = visible)
 		
 def GetScatterPlot(df, x, y, mode, name, showlegend = True):
     return go.Scatter(x=df[x], y = df[y], mode = mode, name = name, text = name, showlegend = showlegend)
@@ -81,6 +82,7 @@ def GetStaticLabelMapbox(gdf, color, size, text_field = 'WARDID', hoverinfo = 's
     lat=gdf.loc[:, 'lat'],
     lon=gdf.loc[:, 'lon'],
     text = gdf.loc[:, text_field],
+    hovertext = f'Ward {text}'
     opacity=1.0,
     textfont={"color":color,"size":size},
     texttemplate = '%{text}',
