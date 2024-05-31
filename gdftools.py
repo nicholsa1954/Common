@@ -26,6 +26,7 @@ def ConvertGDFtoGJSN(gdf):
 	"""
 	randstr = str(random.randint(0, 1000))
 	out_file = pathlib.Path(f"./static/{randstr}.geojson")
+	out_file.parent.mkdir(parents=True, exist_ok=True)
 	gdf.to_file(out_file, driver="GeoJSON")
 	with out_file.open() as f:
 		gjsn = geojson.load(f)
