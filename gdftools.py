@@ -8,6 +8,7 @@ import geojson
 import geopandas as gpd
 import pandas as pd
 import shapely
+from shapely import wkt
 
 from testVPNConnection import testVPNConnection
 
@@ -64,7 +65,7 @@ def InitializeGeoDataFrames(path, data_file, remote_file=True, kwargs={}):
 		return gpd.GeoDataFrame()
 	in_file = Path(path + data_file)
 	if not in_file.is_file():
-		print("Cant find the file:", in_file, "-- returning empty DataFrame.")
+		print("Cant find the file:", in_file, "-- returning empty GeoDataFrame.")
 		print("Do you need to enter network credentials?")
 		return gpd.GeoDataFrame()
 	print("Loading data from file...")
@@ -73,16 +74,28 @@ def InitializeGeoDataFrames(path, data_file, remote_file=True, kwargs={}):
 	start_time = time.time()
 	if sfx == ".shp":
 		gdf = gpd.read_file(in_file, typ="series", orient="records", **kwargs)
+		elapsed_time = time.time() - start_time
+		print(
+			"Geodata loaded, elapsed time:",
+			time.strftime("%H:%M:%S", time.gmtime(elapsed_time)),
+		)
+		return gdf
+	if sfx == ".xlsx":
+		df = pd.read_excel(in_file, **kwargs)
+		if "geometry" not in df.columns:
+			print("No 'geometry' column in DataFrame. Returning empty GeoDataFrame.")
+			return gpd.GeoDataFrame()
+		gs = gpd.GeoSeries(wkt.loads(df['geometry'])).set_crs(epsg="4326")
+		gdf = gpd.GeoDataFrame(df, geometry=gs, crs="EPSG:4326")  
+		elapsed_time = time.time() - start_time
+		print(
+			"Geodata loaded, elapsed time:",
+			time.strftime("%H:%M:%S", time.gmtime(elapsed_time)),
+		)
+		return gdf
 	else:
 		print("unknown file type:", sfx)
 		return gpd.GeoDataFrame()
-	elapsed_time = time.time() - start_time
-	print(
-		"Geodata loaded, elapsed time:",
-		time.strftime("%H:%M:%S", time.gmtime(elapsed_time)),
-	)
-	return gdf
-
 
 def ComputeRegionCentroids(gdf):
 	"""

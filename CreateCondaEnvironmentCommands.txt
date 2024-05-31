@@ -1,6 +1,6 @@
 ### first attempt: 5/20/2023
 
-conda create -c conda-forge -n heroku_env python=3.10.9 -y
+conda create -c conda-forge -n heroku_env python=3.12.3 -y
 conda activate heroku_env
 conda config --env --add channels conda-forge
 conda config --env --set channel_priority strict
@@ -15,8 +15,7 @@ conda install -c conda-forge oauth2client openpyxl phonenumbers pytz pytest dash
 
 
 
-
-### all the above, in one line. Takes about 1 hour to run but all the loaded packages should be compatible
+### all the above, in one line. Takes about 10 minutes to run but all the loaded packages should be compatible
 conda install -c conda-forge scipy numpy pandas matplotlib cython poetry dash dash-bootstrap-components dash-core-components dash-html-components plotly folium waitress whitenoise flask flask-bootstrap flask-login flask-sqlalchemy flask-migrate flask-moment flask-wtf psycopg2 werkzeug geopandas geojson GDAL Fiona geographiclib geopy Shapely gspread google-api-core googlemaps google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib googleapis-common-protos oauth2client openpyxl phonenumbers pytz pytest dash-auth python-dotenv email_validator -y
 
 ### do this last
