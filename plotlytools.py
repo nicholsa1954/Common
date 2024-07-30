@@ -84,7 +84,7 @@ def GetStaticLabelMapbox(gdf, color, size, text_field = 'WARDID', hoverinfo = 's
     text = gdf.loc[:, text_field],
     hovertext = gdf.loc[:, text_field],
     opacity=1.0,
-    textfont={"color":color,"size":size},
+    textfont={"color":color,"size":size, "weight":"bold"},
     texttemplate = '%{text}',
     textposition='middle center')
 	
