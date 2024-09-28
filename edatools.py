@@ -121,6 +121,8 @@ def ParsePhoneUS(phone_number):
     if isinstance(phone_number, float) or isinstance(phone_number, int): return default_phone
     assert(isinstance(phone_number, str))
     if phone_number == 'None' or phone_number == 'nan' or IsBlank(phone_number): return default_phone
+    if (len(phone_number) > 10 and phone_number[0] == '+'):
+        phone_number = phone_number[1:]
     if(len(phone_number) > 10 and phone_number[0] == '1'):
         phone_number = phone_number[1:]
     if len(phone_number) > 10  and phone_number[-1] == '0':

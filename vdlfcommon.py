@@ -38,7 +38,7 @@ kenosha_county_data = dict({\
     'target_city' : 'Kenosha',
     'target_county_fips' : '55059',
     'target_county_fp' : '059',
-    'target_city_fips' : '5505931000',
+    'target_city_fips' : '5505939225',
     'target_county_caps' : 'KENOSHA COUNTY',
     'target_city_caps' : 'City of KENOSHA'})
 
@@ -65,7 +65,7 @@ racine_county_data = dict({\
     'target_city' : 'Racine',
     'target_county_fips' : '55101',
     'target_county_fp' : '101',
-    'target_city_fips' : '5510131000',
+    'target_city_fips' : '5510166000',
     'target_county_caps' : 'RACINE COUNTY',
     'target_city_caps' : 'City of RACINE'})
 
