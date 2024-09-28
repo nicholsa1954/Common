@@ -4,7 +4,7 @@ import plotly.graph_objs as go
 
 def GetChoroplethMapbox(gdf, gjsn, variable, range, colorscale, 
                         marker_line_color, marker_line_width, marker_opacity,
-                        hoverinfo, show_scale):
+                        hoverinfo, show_scale, visible = True):
     return go.Choroplethmapbox(geojson = gjsn,
         locations = gdf['id'],
         z = gdf[variable],
@@ -16,12 +16,16 @@ def GetChoroplethMapbox(gdf, gjsn, variable, range, colorscale,
         marker_line_width = marker_line_width, 
         marker_opacity = marker_opacity,
         hoverinfo = hoverinfo,
-        showscale = show_scale, visible = True)
+        showscale = show_scale, 
+        visible = visible)
+		
+def GetScatterPlot(df, x, y, mode, name, showlegend = True):
+    return go.Scatter(x=df[x], y = df[y], mode = mode, name = name, text = name, showlegend = showlegend)
 
 def GetScatterMapbox(df, size, color, name, showlegend = True):
     return go.Scattermapbox(
         lat=df.loc[:, 'lat'],
-        lon=df.loc[:, 'lng'],
+        lon=df.loc[:, 'lon'],
         showlegend = showlegend,
         name=name,
         mode = 'markers',
@@ -70,15 +74,19 @@ def GetHoverlabelMapbox(gdf, template, color):
         hoverlabel=dict(
             bgcolor=color))
 
-def GetStaticLabelMapbox(gdf, color, size):
+def GetStaticLabelMapbox(gdf, color, size, text_field = 'WARDID', hoverinfo = 'skip'):
     return go.Scattermapbox(
     mode='text',
     name = '',
-    hoverinfo = 'skip',
+    hoverinfo = hoverinfo,
     lat=gdf.loc[:, 'lat'],
     lon=gdf.loc[:, 'lon'],
-    text = gdf.loc[:, 'id'],
+    text = gdf.loc[:, text_field],
+    hovertext = gdf.loc[:, text_field],
     opacity=1.0,
-    textfont={"color":color,"size":size},
+    textfont={"color":color,"size":size, "weight":"bold"},
     texttemplate = '%{text}',
     textposition='middle center')
+	
+	
+	

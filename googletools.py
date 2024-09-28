@@ -8,14 +8,15 @@ packages added for this project:
 also consider if necessary:
     gspread-formatting (https://gspread-formatting.readthedocs.io/en/latest/)
 """
+import datetime
 import pathlib
+from datetime import datetime
+
 import gspread as gs
-from gspread_dataframe import get_as_dataframe, set_with_dataframe
-import requests
-from oauth2client.service_account import ServiceAccountCredentials
-import time, datetime
-from datetime import date, datetime, timedelta, timezone
 import pytz
+import requests
+from gspread_dataframe import get_as_dataframe, set_with_dataframe
+from oauth2client.service_account import ServiceAccountCredentials
 
 default_path = 'C:/Users/nicho/Documents/VocesDeLaFrontera/Common/'
 
@@ -89,7 +90,37 @@ def ReadDictFromGoogleSheets(sheet_id, tab_names,  path=default_path):
 
 
 
-def ReadFromGoogleSheets(sheet_id, tab_names, path=default_path):
+def ReadFromGoogleSheets(sheet_id, tab_names, evaluate_formulas = True, path=default_path):
+    """
+        
+    Reads data from Google Sheets and returns a list of DataFrames.
+
+    Args:
+        sheet_id (str): The ID of the Google Sheets document.
+        tab_names (list): A list of tab names to read data from.
+        path (str, optional): The path to the keyfile. Defaults to default_path.
+
+    Returns:
+        list: A list of DataFrames, each corresponding to a tab in the Google Sheets document.
+
+    Raises:
+        None
+
+    Notes:
+        - This function requires the gspread library.
+        - The keyfile is used to authenticate with the Google Sheets API.
+        - If the keyfile is not found, an error message is printed and the function returns None.
+        - If a tab is not found in the Google Sheets document, an error message is printed.
+
+    Args:
+        sheet_id (_type_): _description_
+        tab_names (_type_): _description_
+        path (_type_, optional): _description_. Defaults to default_path.
+
+    Returns:
+        _type_: _description_
+    """
+    
     data = []
     file = pathlib.Path("createapikey-332513-7d2859405356.json")
     keyfile = pathlib.Path(path, file).resolve()
@@ -110,7 +141,7 @@ def ReadFromGoogleSheets(sheet_id, tab_names, path=default_path):
                       tab_name, 'from spreadsheet!')
     
             print('Getting dataframe for', tab_name, '...')
-            data.append(get_as_dataframe(worksheet, parse_dates=True))
+            data.append(get_as_dataframe(worksheet, evaluate_formulas = evaluate_formulas, parse_dates=True))
         return data
 
     else: print('ReadFromGoogleSheets failed finding keyfile', keyfile)

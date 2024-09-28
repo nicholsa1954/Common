@@ -1,27 +1,23 @@
 
-import pandas as pd
-import pathlib
-from pathlib import Path
-import phonenumbers
-import time
-from time import strftime, gmtime
 import datetime
-from datetime import date, datetime, timedelta, timezone
-import pytz
-import json
-import numpy as np
 import pathlib
-
-
 import sys
+import time
+from pathlib import Path
+from time import gmtime, strftime
+
+import numpy as np
+import pandas as pd
+import phonenumbers
+
 sys.path.append('./code/')
 from testVPNConnection import testVPNConnection
 
 epochDate = '1970-01-01 00:00:00'
 cutoffDate = '2021-11-01 00:00:00'
 
-beginningOfTime = datetime.fromisoformat(epochDate)
-empowerCutoffDate = datetime.fromisoformat(cutoffDate)
+beginningOfTime = datetime.datetime.fromisoformat(epochDate)
+empowerCutoffDate = datetime.datetime.fromisoformat(cutoffDate)
 
 """
 def Op1(x): return x*x
@@ -216,7 +212,7 @@ def InsertDataAtIndex(df, index, label, data):
     df.insert(index, label, data)
     return df
 
-def InsertDataAtLabel(df, new_label, next_to_label, data):
+def InsertDataAtLabel(df, new_label, next_to_label, data, insert_after = True):
     """
     Insert Series "data" with label "label" to the right of "next_to_label"
     in DataFrame df
@@ -229,9 +225,25 @@ def InsertDataAtLabel(df, new_label, next_to_label, data):
     Returns:
         _type_: Pandas DataFrame, modified as above
     """
-    df[new_label] = data
-    col = df.columns.tolist()
-    ndx = list(df.columns).index(next_to_label)+1
-    col.insert(ndx, col.pop()) #loc is the column's index you want to insert into
-    df = df[col]
+    if insert_after:
+        ndx = list(df.columns).index(next_to_label)+1
+    else: 
+        ndx = list(df.columns).index(next_to_label)-1
+    df.insert(ndx, new_label, data)
     return df
+    
+def ColumnSwap(df, col1:str, col2:str):
+	"""
+	swap position of 2 existing columns in a dataframe
+	"""
+	df = df[[col1 if col == col2 else col2 if col == col1 else col for col in df.columns]]
+	return df
+	
+	
+def ColumnMove(df, col_name:str, new_index:int):
+	""" reposition/reorder col to new index in df """
+	col = df.pop(col_name)
+	df.insert(new_index, col.name, col)	
+	return df
+	
+	

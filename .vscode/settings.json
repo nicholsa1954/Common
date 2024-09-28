@@ -1,0 +1,18 @@
+{
+    "python.analysis.extraPaths": [
+        "../../../Common"
+    ],
+    "codeium.enableConfig": {
+        
+        "*": true
+    },
+	"cSpell.words": [
+        "defund",
+        "Evers",
+        "favorability",
+        "funders",
+        "GOTV",
+        "precarity",
+        "racialized"
+    ]
+}
