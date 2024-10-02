@@ -1,23 +1,27 @@
 
-import datetime
-import pathlib
-import sys
-import time
-from pathlib import Path
-from time import gmtime, strftime
-
-import numpy as np
 import pandas as pd
+import pathlib
+from pathlib import Path
 import phonenumbers
+import time
+from time import strftime, gmtime
+import datetime
+from datetime import date, datetime, timedelta, timezone
+import pytz
+import json
+import numpy as np
+import pathlib
 
-sys.path.append('./code/')
+
+import sys
+sys.path.append('./')
 from testVPNConnection import testVPNConnection
 
 epochDate = '1970-01-01 00:00:00'
 cutoffDate = '2021-11-01 00:00:00'
 
-beginningOfTime = datetime.datetime.fromisoformat(epochDate)
-empowerCutoffDate = datetime.datetime.fromisoformat(cutoffDate)
+beginningOfTime = datetime.fromisoformat(epochDate)
+empowerCutoffDate = datetime.fromisoformat(cutoffDate)
 
 """
 def Op1(x): return x*x
@@ -95,6 +99,19 @@ def IsNotBlank(s):
     if isinstance(s, float) or isinstance(s, int): return False
     return bool(s and not s.isspace())
 
+def SplitTime(theTime):
+    if isinstance(theTime, int) or isinstance(theTime, float):
+        if np.isnan(theTime):
+            return beginningOfTime.date()
+        return pd.to_datetime(time.strftime("%Y-%m-%d",time.gmtime(int(theTime/1000)))).date()
+    if not theTime or theTime.isspace():
+        return beginningOfTime.date()
+    if 'T' in theTime:
+        date, time = theTime.split('T')
+    elif ' ' in theTime:
+        date, time = theTime.split(' ')
+    date_dt = pd.to_datetime(date)
+    return date_dt.date()
 
 def ConvertTime(theTime):
     try:

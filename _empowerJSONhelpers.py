@@ -99,6 +99,19 @@ def IsNotBlank(s):
     if isinstance(s, float) or isinstance(s, int): return False
     return bool(s and not s.isspace())
 
+def SplitTime(theTime):
+    if isinstance(theTime, int) or isinstance(theTime, float):
+        if np.isnan(theTime):
+            return beginningOfTime.date()
+        return pd.to_datetime(time.strftime("%Y-%m-%d",time.gmtime(int(theTime/1000)))).date()
+    if not theTime or theTime.isspace():
+        return beginningOfTime.date()
+    if 'T' in theTime:
+        date, time = theTime.split('T')
+    elif ' ' in theTime:
+        date, time = theTime.split(' ')
+    date_dt = pd.to_datetime(date)
+    return date_dt.date()
 
 def ConvertTime(theTime):
     try:
@@ -125,6 +138,8 @@ def ParsePhoneUS(phone_number):
     if isinstance(phone_number, float) or isinstance(phone_number, int): return default_phone
     assert(isinstance(phone_number, str))
     if phone_number == 'None' or phone_number == 'nan' or IsBlank(phone_number): return default_phone
+    if (len(phone_number) > 10 and phone_number[0] == '+'):
+        phone_number = phone_number[1:]
     if(len(phone_number) > 10 and phone_number[0] == '1'):
         phone_number = phone_number[1:]
     if len(phone_number) > 10  and phone_number[-1] == '0':
