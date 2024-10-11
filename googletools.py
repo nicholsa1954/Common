@@ -18,11 +18,12 @@ import requests
 from gspread_dataframe import get_as_dataframe, set_with_dataframe
 from oauth2client.service_account import ServiceAccountCredentials
 
-default_path = 'C:/Users/nicho/Documents/VocesDeLaFrontera/Common/'
+key_path = 'C:/Users/nicho/Documents/VocesDeLaFrontera/Keys/'
+key_file = "createapikey-332513-213a2ef92b3e.json"
 
-def WriteToGoogleSheets(df, sheet_id, tab_name, mode, path=default_path):
-    file = pathlib.Path("createapikey-332513-7d2859405356.json")
-    keyfile = pathlib.Path(path, file).resolve()
+def WriteToGoogleSheets(df, sheet_id, tab_name, mode, path=key_path):
+    file = pathlib.Path(key_file)
+    keyfile = pathlib.Path(key_path, file).resolve()
 
     if keyfile.exists():
         gc = gs.service_account(filename=keyfile)
@@ -63,10 +64,10 @@ def WriteToGoogleSheets(df, sheet_id, tab_name, mode, path=default_path):
     else: print('WriteToGoogleSheets failed finding keyfile', keyfile)
 
 
-def ReadDictFromGoogleSheets(sheet_id, tab_names,  path=default_path):
+def ReadDictFromGoogleSheets(sheet_id, tab_names,  path=key_path):
     data_dict = {}
-    file = pathlib.Path("createapikey-332513-7d2859405356.json")
-    keyfile = pathlib.Path(path, file).resolve()
+    file = pathlib.Path(key_file)
+    keyfile = pathlib.Path(key_path, file).resolve()
 
     if keyfile.exists():
         gc = gs.service_account(filename=keyfile)
@@ -90,7 +91,7 @@ def ReadDictFromGoogleSheets(sheet_id, tab_names,  path=default_path):
 
 
 
-def ReadFromGoogleSheets(sheet_id, tab_names, evaluate_formulas = True, path=default_path):
+def ReadFromGoogleSheets(sheet_id, tab_names, evaluate_formulas = True, path=key_path):
     """
         
     Reads data from Google Sheets and returns a list of DataFrames.
@@ -122,8 +123,8 @@ def ReadFromGoogleSheets(sheet_id, tab_names, evaluate_formulas = True, path=def
     """
     
     data = []
-    file = pathlib.Path("createapikey-332513-7d2859405356.json")
-    keyfile = pathlib.Path(path, file).resolve()
+    file = pathlib.Path(key_file)
+    keyfile = pathlib.Path(key_path, file).resolve()
 
     if keyfile.exists():
         gc = gs.service_account(filename=keyfile)
@@ -147,9 +148,9 @@ def ReadFromGoogleSheets(sheet_id, tab_names, evaluate_formulas = True, path=def
     else: print('ReadFromGoogleSheets failed finding keyfile', keyfile)
     
     
-def GetWkbkUpdateTime(sheet_id, path=default_path):
-    file = pathlib.Path("createapikey-332513-7d2859405356.json")
-    keyfile = pathlib.Path(path, file).resolve()
+def GetWkbkUpdateTime(sheet_id, path=key_path):
+    file = pathlib.Path(key_file)
+    keyfile = pathlib.Path(key_path, file).resolve()
 
     if keyfile.exists():
         gc = gs.service_account(filename=keyfile)
