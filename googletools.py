@@ -18,7 +18,7 @@ import requests
 from gspread_dataframe import get_as_dataframe, set_with_dataframe
 from oauth2client.service_account import ServiceAccountCredentials
 
-key_path = '../Keys/'
+key_path = '../../Keys/'
 key_file = "createapikey-332513-213a2ef92b3e.json"
 
 def WriteToGoogleSheets(df, sheet_id, tab_name, mode, path=key_path):
@@ -138,14 +138,13 @@ def ReadFromGoogleSheets(sheet_id, tab_names, evaluate_formulas = True, path=key
             try:
                 worksheet = spreadsheet.worksheet(tab_name)
             except gs.exceptions.WorksheetNotFound:
-                print('ReadFromGoogleSheets cant get worksheet',
-                      tab_name, 'from spreadsheet!')
+                print(f"'ReadFromGoogleSheets' can't get worksheet {tab_name} from spreadsheet!")
     
-            print('Getting dataframe for', tab_name, '...')
+            print(f"Getting dataframe for tab {tab_name} ...")
             data.append(get_as_dataframe(worksheet, evaluate_formulas = evaluate_formulas, parse_dates=True))
         return data
 
-    else: print('ReadFromGoogleSheets failed finding keyfile', keyfile)
+    else: print(f"'ReadFromGoogleSheets' failed finding keyfile {keyfile}.")
     
     
 def GetWkbkUpdateTime(sheet_id, path=key_path):
