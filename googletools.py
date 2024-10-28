@@ -18,7 +18,7 @@ import requests
 from gspread_dataframe import get_as_dataframe, set_with_dataframe
 from oauth2client.service_account import ServiceAccountCredentials
 
-key_path = '../Keys/'
+key_path = '../../Keys/'
 key_file = "createapikey-332513-213a2ef92b3e.json"
 
 def WriteToGoogleSheets(df, sheet_id, tab_name, mode, path=key_path):
