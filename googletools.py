@@ -86,6 +86,7 @@ def ReadDictFromGoogleSheets(sheet_id, tab_names,  path=key_path):
     
             print('Getting dataframe for', tab_name, '...')
             data_dict[tab_name] = get_as_dataframe(worksheet, parse_dates=True)
+		print('Data complete.')
         return data_dict
     else: print('ReadDictFromGoogleSheets failed finding keyfile', keyfile)
 
@@ -140,8 +141,9 @@ def ReadFromGoogleSheets(sheet_id, tab_names, evaluate_formulas = True, path=key
             except gs.exceptions.WorksheetNotFound:
                 print(f"'ReadFromGoogleSheets' can't get worksheet {tab_name} from spreadsheet!")
     
-            print(f"Getting dataframe for tab {tab_name} ...")
+            print(f"Getting dataframe from tab '{tab_name}' ...")
             data.append(get_as_dataframe(worksheet, evaluate_formulas = evaluate_formulas, parse_dates=True))
+		print('Data complete.')
         return data
 
     else: print(f"'ReadFromGoogleSheets' failed finding keyfile {keyfile}.")
