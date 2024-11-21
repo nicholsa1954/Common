@@ -34,13 +34,14 @@ def ConvertGDFtoGJSN(gdf):
 	return gjsn
 
 
-def InitializeGeoDataFrames(path, data_file, remote_file=True, kwargs={}):
+def InitializeGeoDataFrames(path, data_file, epsg, remote_file=True, kwargs={}):
 	"""
 	InitializeGeoDataFrames is a function that initializes and returns a GeoDataFrame object by loading data from a file.
 
 	Parameters:
 	- path (str): The path to the directory where the data file is located.
 	- data_file (str): The name of the data file.
+	- epsg (int): The EPSG code for the coordinate reference system.
 	- remote_file (bool): A flag indicating whether the data file is located remotely or not. Defaults to True.
 	- kwargs (dict): Additional keyword arguments to be passed to the underlying read_file method.
 
@@ -73,8 +74,17 @@ def InitializeGeoDataFrames(path, data_file, remote_file=True, kwargs={}):
 
 	sfx = pathlib.Path(data_file).suffix
 	start_time = time.time()
+	if sfx == ".zip":
+		zipfile = f"zip://{in_file}"
+		gdf = gpd.read_file(zipfile).to_crs(epsg=epsg)
+		elapsed_time = time.time() - start_time
+		print(
+			"Geodata loaded, elapsed time:",
+			time.strftime("%H:%M:%S", time.gmtime(elapsed_time)),
+		)
+		return gdf
 	if sfx == ".shp":
-		gdf = gpd.read_file(in_file, typ="series", orient="records", **kwargs)
+		gdf = gpd.read_file(in_file, typ="series", orient="records", epsg=epsg, **kwargs)
 		elapsed_time = time.time() - start_time
 		print(
 			"Geodata loaded, elapsed time:",
@@ -86,8 +96,8 @@ def InitializeGeoDataFrames(path, data_file, remote_file=True, kwargs={}):
 		if "geometry" not in df.columns:
 			print("No 'geometry' column in DataFrame. Returning empty GeoDataFrame.")
 			return gpd.GeoDataFrame()
-		gs = gpd.GeoSeries(wkt.loads(df['geometry'])).set_crs(epsg="4326")
-		gdf = gpd.GeoDataFrame(df, geometry=gs, crs="EPSG:4326")  
+		gs = gpd.GeoSeries(wkt.loads(df['geometry'])).set_crs(epsg=epsg)
+		gdf = gpd.GeoDataFrame(df, geometry=gs, crs=f"EPSG:{epsg}")  
 		elapsed_time = time.time() - start_time
 		print(
 			"Geodata loaded, elapsed time:",
