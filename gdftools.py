@@ -34,7 +34,7 @@ def ConvertGDFtoGJSN(gdf):
 	return gjsn
 
 
-def InitializeGeoDataFrames(path, data_file, epsg, remote_file=True, kwargs={}):
+def InitializeGeoDataFrames(path, data_file, epsg = 4326, remote_file=True, kwargs={}):
 	"""
 	InitializeGeoDataFrames is a function that initializes and returns a GeoDataFrame object by loading data from a file.
 
