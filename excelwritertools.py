@@ -26,9 +26,9 @@ with pd.ExcelWriter('test.xlsx' ) as writer:
     multi.style.map_index(highlight_cells, axis = 'index', level = [1,2] ).to_excel(writer, "Sheet1",  engine='xlsxwriter')
     
     
-## If you are not writing a multiindex, you can just use the aooly() and map() methods.  Note here the chain of .apply()
+## If you are not writing a multiindex, you can just use the apply() and map() methods.  Note here the chain of .apply()
 ## calls, one call per column of the output spreadsheet. You can only format cells in a row where the predicate is true.
-## To gat around that, try map() instead of aply().    
+## To get around that, try map() instead of aply().    
 with pd.ExcelWriter(out_file) as writer:    
     workbook = writer.book
     for key, value in ids_to_names.items():
@@ -36,7 +36,7 @@ with pd.ExcelWriter(out_file) as writer:
         director_df = WriteTreeForDirector(key, leaders, voters)
         director_df = AddParentNames(director_df)
         
-        ## the multiindex organized the data 
+        ## the multiindex organizes the data 
         ## nicely even we throw it away in the next step
         multi = director_df.set_index(['ParentRole','ParentEID','ParentName'])\
             .sort_values(by = ['ParentRole','ParentName', 'Role','LastUsedEmpowerAt'],\
@@ -50,6 +50,10 @@ with pd.ExcelWriter(out_file) as writer:
                 .to_excel(writer,value,  engine='xlsxwriter', index = False)
         
         print('wrote tree for:', value)    
+
+
+## Simpler examples, such as conditional formatting a whole row:
+## https://queirozf.com/entries/pandas-dataframe-examples-styling-cells-and-conditional-formatting
     
     
     

@@ -149,24 +149,27 @@ def ConvertWardFormat(row, converter):
         Exception: If the input ward string is not found in the ward_mappings
             dictionary.
     """
-    if row['type'] == 'hypen':
-        search = re.search(r'(\d+)(?:\s*)-(?:\s*)(\d+$)', row['data'])
-        if(search):
-            return "Wards %s" % (",".join([str(x) for x in range(int(search.group(1)), int(search.group(2))+1)]))
-    elif row['type'] == 'comma':
-        search = re.search(r'(\d+)((?:\s*),(?:\s*)*)', row['data'])
-        return "Wards %s" % (search.string)
-    elif row['type'] == 'single':
-        search = re.search(r'(\d+$)', row['data'])
-        return "Ward %d" % (int(search.group(1), 10))
-    elif row['type'] == 'amp':
-        search = re.search(r'(\d+)(?:\s*)&(?:\s*)(\d+$)', row['data'])
-        return "Wards %d,%d" % (int(search.group(1)), int(search.group(2)))
-    elif row['type'] == 'commahyphen':
-        search = re.search(r'(\d+)((?:\s*),(?:\s*)*)', row['data'])
-        return "Wards %s" % (search.string)
-    elif row['type'] == 'unmatched':
-        return converter(row['ReportingUnit'])    
+    try:
+        if row['type'] == 'hypen':
+            search = re.search(r'(\d+)(?:\s*)-(?:\s*)(\d+$)', row['data'])
+            if(search):
+                return "Wards %s" % (",".join([str(x) for x in range(int(search.group(1)), int(search.group(2))+1)]))
+        elif row['type'] == 'comma':
+            search = re.search(r'(\d+)((?:\s*),(?:\s*)*)', row['data'])
+            return "Wards %s" % (search.string)
+        elif row['type'] == 'single':
+            search = re.search(r'(\d+$)', row['data'])
+            return "Ward %d" % (int(search.group(1), 10))
+        elif row['type'] == 'amp':
+            search = re.search(r'(\d+)(?:\s*)&(?:\s*)(\d+$)', row['data'])
+            return "Wards %d,%d" % (int(search.group(1)), int(search.group(2)))
+        elif row['type'] == 'commahyphen':
+            search = re.search(r'(\d+)((?:\s*),(?:\s*)*)', row['data'])
+            return "Wards %s" % (search.string)
+        elif row['type'] == 'unmatched':
+            return converter(row['ReportingUnit'])    
+    except AttributeError:
+        return converter(row['ReportingUnit'])
     
 def TitleCaseReportingCounty(cnty):
     if cnty == "La Crosse" or cnty == "LA CROSSE":
