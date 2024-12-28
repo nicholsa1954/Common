@@ -44,6 +44,15 @@ df[['col3', 'col4']] = df.apply(lambda row : Func(row, headers, ops), axis = 1)
 df
 
 """
+"""
+### or use a simpler method:
+### expand = True tells Pandas to expand the split lists into new DataFrame columns
+data = {'full_name': ['Michael Johnson', 'Sarah Williams', 'David Brown', 'Emily Davis', 'Jessica Wilson']} 
+df = pd.DataFrame(data)
+df[['first_name', 'last_name']] = df['full_name'].str.split(' ', expand=True)
+df
+
+"""
 
 class DatetimeRange:
     """
