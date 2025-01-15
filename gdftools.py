@@ -84,7 +84,7 @@ def InitializeGeoDataFrames(path, data_file, epsg = 4326, remote_file=True, kwar
 		)
 		return gdf
 	if sfx == ".shp":
-		gdf = gpd.read_file(in_file, typ="series", orient="records", epsg=epsg, **kwargs)
+		gdf = gpd.read_file(in_file, typ="series", orient="records", **kwargs).to_crs(epsg=epsg)
 		elapsed_time = time.time() - start_time
 		print(
 			"Geodata loaded, elapsed time:",

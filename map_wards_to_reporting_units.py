@@ -1,10 +1,91 @@
 import numpy as np
 import re
 import sys
+import pandas as pd
 sys.path.append('../../Common')
+
+from gdftools import InitializeGeoDataFrames
+from edatools import InitializeDataFrames, ColumnMove, ColumnSwap
+from setoperations import SetIntersection, SetDifference
+
+common_epsg = 4326  #3070 is the Wisconsin Mercator Projection
+common_crs = 'EPSG:' + str(common_epsg)
+
+wisconsin_epsg = 3070
+wisconsin_crs = 'EPSG:' + str(wisconsin_epsg)
 
 from ward_mappings import ward_mappings
 keys = ward_mappings.keys()
+
+def InitializeWECDataFrames(path, file, geocodes, label_row, body_row,  presidential,remote_file, kwargs):
+    df = InitializeDataFrames(path, file,  remote_file, kwargs = kwargs)
+    label = df.iloc[label_row,0].title()
+    columns_to_keep = ['WEC Canvass Reporting System', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3','Unnamed: 4',] #'Total Votes Cast', 'DEM', 'REP'   
+    columns_renamed = ['CNTY_NAME', 'ReportingUnit', 'TotalVotes', 'DEM', 'REP']
+    df = df[columns_to_keep]
+    df.rename(columns = dict(zip(columns_to_keep, columns_renamed)), inplace = True)
+    df = df.iloc[body_row:]
+    df.reset_index(drop=True, inplace=True)
+    
+    if presidential:
+        dem_name = 'Kamala_Harris'
+        rep_name = 'Donald_Trump'
+        
+    else:
+        dem_name = '_'.join(''.join(df.iloc[0,3]).split())
+        rep_name = '_'.join(''.join(df.iloc[0,4]).split())
+    
+    df = df.iloc[1:]
+    df.reset_index(drop=True, inplace=True)
+    
+    df = df.loc[(df['ReportingUnit'] != 'County Totals:') & (df['ReportingUnit'] != 'Office Totals:') & (df['ReportingUnit'].notna())]
+    df['DEM'] = df['DEM'].astype(int)
+    df['REP'] = df['REP'].astype(int)
+    df['TotalVotes'] = df['TotalVotes'].astype(int)
+    df['CNTY_NAME'] = df['CNTY_NAME'].ffill().str.title()
+    df['CNTY_NAME'] = df['CNTY_NAME'].apply(lambda x: f"{x.strip()} County")
+    df['CNTY_NAME'] = df['CNTY_NAME'].replace('Fond Du Lac County', 'Fond du Lac County')
+    df['CNTY_FIPS'] = ''
+    df = ColumnMove(df, 'CNTY_FIPS', 1)
+    df.reset_index(drop=True, inplace=True)
+
+    for row in geocodes.itertuples():
+        df.loc[df['CNTY_NAME'] == row.Area_Name,'CNTY_FIPS'] = row.GEOID
+
+    df['ReportingUnit'] = df['ReportingUnit'].str.title()
+    df['ReportingUnit'] = df['ReportingUnit'].str.replace('Of', 'of')
+    #df['ReportingUnit'] = df['ReportingUnit'].str.replace('Fond Du Lac', 'Fond du Lac')
+    df['ReportingUnit'] = df['ReportingUnit'].str.replace(' Du ', ' du ')
+    df = pd.concat([df, df['ReportingUnit'].apply(lambda s: pd.Series(ProcessReportingUnitString(s),dtype='object'))], axis=1)
+    df['Wards'] = df.apply(ConvertWardFormat, args=(ConvertWardStrings,), axis=1)
+    df['data'] = df['data'].astype(str)
+    df['data'] = df['data'].fillna('None')
+    df['MCD_NAME'] = df['ReportingUnit'].map(ConvertRow)
+    df['MCD_FIPS'] = '0'
+    df['EXPANDEDGEOID'] = '0'
+
+    ### Put a county code on each MCD so we can distinguish similarly named MCDs in different counties
+    ### Match by the name of the MCD
+    diff = SetDifference(df, geocodes[['Area_Name', 'County_Code']], left_on = 'CNTY_NAME', right_on = 'Area_Name')
+    df = SetIntersection(df, geocodes[['Area_Name', 'County_Code']], left_on = 'CNTY_NAME', right_on = 'Area_Name')
+
+    #add the fips codes for the MCDs
+    for row in geocodes.itertuples():
+        df.loc[(df['MCD_NAME'] == row.MCD_NAME) & (df['County_Code'] == row.County_Code), 'MCD_FIPS'] = row.GEOID
+        
+    df['EXPANDEDGEOID'] = df.apply(ExpandFips, axis=1)
+    
+    columns_to_keep2 = [\
+    'CNTY_NAME', 'CNTY_FIPS',  'MCD_NAME', 'MCD_FIPS', 
+    'TotalVotes', 'DEM','REP', 'Wards', 'EXPANDEDGEOID'] 
+
+    df = df[columns_to_keep2]
+    if presidential:
+        df = df.rename(columns = {'TotalVotes':'PresTotalVotes', 'DEM':'PresDEM', 'REP':'PresREP'})
+    else:
+        df = df.rename(columns = {'TotalVotes':'DistTotalVotes', 'DEM':'DistDEM', 'REP':'DistREP'})
+        
+    return label, dem_name, rep_name, df     
 
 def PreprocessData(df, target_county_list):
     """
@@ -129,7 +210,7 @@ def ConvertWardStrings(row):
     if subrow in keys:
         return ward_mappings[subrow]
     else:
-        raise Exception(subrow, 'not in dictionary')
+        raise Exception(row, subrow, 'not in dictionary')
     
 def ConvertWardFormat(row, converter):
     """
@@ -236,15 +317,17 @@ def ExpandFips(row):
     Prints the 'Wards' value if it cannot be split into a ward list.
     """
     fipslist = []
-    if row['Wards']:    
+    if row['Wards'] and row['MCD_FIPS'] != '0':  
         try:  
             (_, wardsstr) = row['Wards'].split()
             wardlist = [x for x in wardsstr.split(',')]
         except:
-            print(row['Wards'])
             wardlist = [row['Wards']]
         fipslist = "|".join(["%s%s" % (row['MCD_FIPS'], x.rjust(4,'0')) for x in wardlist])
-    return fipslist   
+        return fipslist   
+    else:
+        print('ExpandFips Error:',row.CNTY_NAME, row.MCD_NAME, row.MCD_FIPS, row.Wards, row.EXPANDEDGEOID)
+        return None
 
 def TestRegex():
     """
