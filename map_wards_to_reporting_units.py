@@ -4,8 +4,7 @@ import sys
 import pandas as pd
 sys.path.append('../../Common')
 
-from gdftools import InitializeGeoDataFrames
-from edatools import InitializeDataFrames, ColumnMove, ColumnSwap
+from edatools import InitializeDataFrames, ColumnMove
 from setoperations import SetIntersection, SetDifference
 
 common_epsg = 4326  #3070 is the Wisconsin Mercator Projection
