@@ -86,7 +86,7 @@ def InitializeWECDataFrames(path, file, geocodes, label_row, body_row,  presiden
         
     return label, dem_name, rep_name, df     
 
-def PreprocessData(df, target_county_list):
+def PreprocessData(df, str_to_append, target_county_list):
     """
     Preprocess election results data by renaming columns, stripping/titlecasing county names, 
     title-casing reporting units, and removing rows not in target_county_list.  Also, separate
@@ -107,7 +107,9 @@ def PreprocessData(df, target_county_list):
         Preprocessed election results data
     """
     
-    df.rename(columns={'Unnamed: 0': 'CNTY_NAME', 'Unnamed: 1': 'ReportingUnit', 'Unnamed: 2': 'Total', 'SCATTERING': 'Other'}, inplace=True)
+    total_column_name = ''.join(['Total', str_to_append])
+    df.rename(columns={'Unnamed: 0': 'CNTY_NAME', 'Unnamed: 1': 'ReportingUnit', 
+            'Unnamed: 2': total_column_name, 'SCATTERING': 'Other'}, inplace=True)
     df['CNTY_NAME'] = df['CNTY_NAME'].str.strip().ffill()
     df['CNTY_NAME'] = df['CNTY_NAME'].apply(lambda x: x.strip().title())
 
@@ -327,6 +329,66 @@ def ExpandFips(row):
     else:
         print('ExpandFips Error:',row.CNTY_NAME, row.MCD_NAME, row.MCD_FIPS, row.Wards, row.EXPANDEDGEOID)
         return None
+    
+## A WEC Election results report file, see https://elections.wi.gov/elections/election-results
+## The election results are reported by reporting unit, which are supersets of wards. 
+## They may involve single sheets or multiple sheets depending on the election and there will be some
+## header information that needs to be skipped.
+
+def CreateElectionData(target_counties, columns_to_keep, geocode_df, str_to_append, path, file, skiprows = 0, sheet_name = 'Sheet1'):
+    df = InitializeDataFrames(path, file, remote_file=False, kwargs={'skiprows': skiprows, 'sheet_name': sheet_name})
+    _, voter_df = PreprocessData(df, str_to_append, target_counties)
+    # voter_df = voter_df[columns_to_keep]
+    result = pd.concat([voter_df, voter_df['ReportingUnit'].apply(lambda s: pd.Series(ProcessReportingUnitString(s),dtype='object'))], axis=1)
+    result['Wards'] = result.apply(ConvertWardFormat, args=(ConvertWardStrings,), axis=1)
+    result['data'] = result['data'].astype(str)
+    result['data'] = result['data'].fillna('None')
+    result['MCD_NAME'] = result['ReportingUnit'].map(ConvertRow)
+    result['MCD_FIPS'] = '0'
+    ## result['WinNumber_53'] = (.53 * result['Total']).fillna(0).astype(int)
+    
+    result = SetIntersection(result, geocode_df[['Area_Name', 'County_Code']], left_on = 'CNTY_NAME', right_on = 'Area_Name').drop(columns = 'Area_Name')
+    for row in geocode_df.itertuples():
+        result.loc[(result['MCD_NAME'] == row.MCD_NAME) & (result['County_Code'] == row.County_Code), 'MCD_FIPS'] = row.GEOID
+    result['MCD_FIPS'] = result['MCD_FIPS'].astype(np.int64).astype(str)
+    result['EXPANDEDGEOID'] = result.apply(ExpandFips, axis = 1)
+    result = result[columns_to_keep]
+    return result    
+
+def compute_ward(ward):
+    lst = ward.split(' ')
+    if len(lst) == 1:
+        return lst[0].zfill(4)  
+    else:
+        return lst[-1].zfill(4)
+
+def CreateVoterRegistrationData(target_counties, columns_to_keep, fips_dict, geocode_df, path, file, skiprows = 0):
+    df = InitializeDataFrames(path, file, remote_file=False, kwargs = {'skiprows': skiprows})
+
+    df = df[df['County'].isin(target_counties)].reset_index(drop=True)
+    df['CNTY_NAME'] = df['County'].str.replace(" COUNTY", "").str.title()
+    df['Muni'] = df['Muni'].str.split('-').str[0].str.strip().str.title()
+    df['Muni'] = df['Muni'].str.replace("Of","of")
+    df.rename(columns={'Muni': 'MCD_NAME'}, inplace=True)
+    df['Ward'] = df['ward'].apply(lambda x: compute_ward(x))
+
+    df['CNTY_FIPS'] = df['CNTY_NAME'].map(fips_dict)
+    df['County_Code'] = df['CNTY_FIPS'].str[-3:]
+    df['MCD_FIPS'] = '0'
+
+## Test both the MCD name and the county code because there are a number of cases where names are duplicated across counties
+    for row in geocode_df.itertuples():
+        name = row.MCD_NAME.strip()
+        code = row.County_Code.zfill(3)
+        id = row.GEOID
+        df.loc[((df['MCD_NAME'].str.strip() == name) & 
+                (df['County_Code'].str.strip() == code)), 'MCD_FIPS'] = id
+     
+    df['GEOID'] = df['MCD_FIPS'] + df['Ward']
+    df['GEOID'] = df['GEOID'].astype(str)
+    df = df[columns_to_keep]
+    df.reset_index(inplace=True, drop=True)
+    return df
 
 def TestRegex():
     """
