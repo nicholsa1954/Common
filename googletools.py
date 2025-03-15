@@ -18,13 +18,12 @@ import requests
 from gspread_dataframe import get_as_dataframe, set_with_dataframe
 from oauth2client.service_account import ServiceAccountCredentials
 
-key_path = '../../../Keys/'
+key_path = '../../Keys/'
 key_file = "createapikey-332513-213a2ef92b3e.json"
+file = pathlib.Path(key_file)
+keyfile = pathlib.Path(key_path, file).resolve()
 
-def WriteToGoogleSheets(df, sheet_id, tab_name, mode, path=key_path):
-    file = pathlib.Path(key_file)
-    keyfile = pathlib.Path(key_path, file).resolve()
-
+def WriteToGoogleSheets(df, sheet_id, tab_name, mode):
     if keyfile.exists():
         gc = gs.service_account(filename=keyfile)
         url = f'https://docs.google.com/spreadsheets/d/{sheet_id}'
@@ -63,12 +62,8 @@ def WriteToGoogleSheets(df, sheet_id, tab_name, mode, path=key_path):
             return True
     else: print('WriteToGoogleSheets failed finding keyfile', keyfile)
 
-
-def ReadDictFromGoogleSheets(sheet_id, tab_names,  path=key_path):
+def ReadDictFromGoogleSheets(sheet_id, tab_names):
     data_dict = {}
-    file = pathlib.Path(key_file)
-    keyfile = pathlib.Path(key_path, file).resolve()
-
     if keyfile.exists():
         gc = gs.service_account(filename=keyfile)
         url = f'https://docs.google.com/spreadsheets/d/{sheet_id}'
@@ -90,11 +85,8 @@ def ReadDictFromGoogleSheets(sheet_id, tab_names,  path=key_path):
         return data_dict
     else: print('ReadDictFromGoogleSheets failed finding keyfile', keyfile)
 
-
-
-def ReadFromGoogleSheets(sheet_id, tab_names, evaluate_formulas = True, path=key_path):
+def ReadFromGoogleSheets(sheet_id, tab_names, evaluate_formulas = True):
     """
-        
     Reads data from Google Sheets and returns a list of DataFrames.
 
     Args:
@@ -124,9 +116,6 @@ def ReadFromGoogleSheets(sheet_id, tab_names, evaluate_formulas = True, path=key
     """
     
     data = []
-    file = pathlib.Path(key_file)
-    keyfile = pathlib.Path(key_path, file).resolve()
-
     if keyfile.exists():
         gc = gs.service_account(filename=keyfile)
         url = f'https://docs.google.com/spreadsheets/d/{sheet_id}'
@@ -149,10 +138,7 @@ def ReadFromGoogleSheets(sheet_id, tab_names, evaluate_formulas = True, path=key
     else: print(f"'ReadFromGoogleSheets' failed finding keyfile {keyfile}.")
     
     
-def GetWkbkUpdateTime(sheet_id, path=key_path):
-    file = pathlib.Path(key_file)
-    keyfile = pathlib.Path(key_path, file).resolve()
-
+def GetWkbkUpdateTime(sheet_id):
     if keyfile.exists():
         gc = gs.service_account(filename=keyfile)
         url = f'https://docs.google.com/spreadsheets/d/{sheet_id}'
@@ -161,7 +147,6 @@ def GetWkbkUpdateTime(sheet_id, path=key_path):
         except gs.exceptions.WorksheetNotFound:
             print('GetWkbkUpdateTime cant find that spreadsheet!')
     
- 
         scope = ["https://www.googleapis.com/auth/drive", "https://www.googleapis.com/auth/spreadsheets"]
         credentials = ServiceAccountCredentials.from_json_keyfile_name(keyfile, scope)
         # gc = gs.authorize(credentials)
