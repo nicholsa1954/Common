@@ -8,15 +8,15 @@ from edatools import InitializeDataFrames, ColumnMove
 from setoperations import SetIntersection, SetDifference
 
 common_epsg = 4326  #3070 is the Wisconsin Mercator Projection
-common_crs = 'EPSG:' + str(common_epsg)
+common_crs = f'EPSG:{common_epsg}'
 
 wisconsin_epsg = 3070
-wisconsin_crs = 'EPSG:' + str(wisconsin_epsg)
+wisconsin_crs = f'EPSG:{wisconsin_epsg}'
 
 from ward_mappings import ward_mappings
 keys = ward_mappings.keys()
 
-def InitializeWECDataFrames(path, file, geocodes, label_row, body_row,  presidential,remote_file, kwargs):
+def InitializeWECDataFrames(path, file, geocodes, label_row, body_row,  presidential, remote_file, kwargs):
     df = InitializeDataFrames(path, file,  remote_file, kwargs = kwargs)
     label = df.iloc[label_row,0].title()
     columns_to_keep = ['WEC Canvass Reporting System', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3','Unnamed: 4',] #'Total Votes Cast', 'DEM', 'REP'   
@@ -53,7 +53,6 @@ def InitializeWECDataFrames(path, file, geocodes, label_row, body_row,  presiden
 
     df['ReportingUnit'] = df['ReportingUnit'].str.title()
     df['ReportingUnit'] = df['ReportingUnit'].str.replace('Of', 'of')
-    #df['ReportingUnit'] = df['ReportingUnit'].str.replace('Fond Du Lac', 'Fond du Lac')
     df['ReportingUnit'] = df['ReportingUnit'].str.replace(' Du ', ' du ')
     df = pd.concat([df, df['ReportingUnit'].apply(lambda s: pd.Series(ProcessReportingUnitString(s),dtype='object'))], axis=1)
     df['Wards'] = df.apply(ConvertWardFormat, args=(ConvertWardStrings,), axis=1)
@@ -76,7 +75,7 @@ def InitializeWECDataFrames(path, file, geocodes, label_row, body_row,  presiden
     
     columns_to_keep2 = [\
     'CNTY_NAME', 'CNTY_FIPS',  'MCD_NAME', 'MCD_FIPS', 
-    'TotalVotes', 'DEM','REP', 'Wards', 'EXPANDEDGEOID'] 
+    'TotalVotes', 'DEM', 'REP', 'Wards', 'EXPANDEDGEOID'] 
 
     df = df[columns_to_keep2]
     if presidential:
@@ -137,12 +136,11 @@ def extract_numbers(text):
             start, end = map(int, part.split('-'))
             numbers.extend(range(start, end + 1))
         else:
-            numbers.append(int(part))  
-    if numbers: return ','.join(map(str,numbers))
-    return None
+            numbers.append(int(part))
+    return ','.join(map(str,numbers)) if numbers else None
 
 def ProcessReportingUnitString(ward):
-        """
+    """
         Process a reporting unit string into a dictionary with two keys: 'type' and 'data'.
 
         'type' is one of the following:
@@ -159,37 +157,82 @@ def ProcessReportingUnitString(ward):
         :return: A dictionary with two keys: 'type' and 'data'.
         :raises Exception: If the input string is None or empty.
         """
-        if ward == 'County Totals:':
-            pass
-        elif ward == 'Office Totals:':
-            pass
-        elif ward != np.nan:
-            # not None if ward contants both '-' and ',' e.g. 'foo bar bazz 1-3,5-7,9'
-            regexpn = r"(,.*-)|(-.*,)"
-            x = re.search(regexpn, ward)
-            if x is not None:
-                if result := extract_numbers(ward): 
-                    return {"type": "commahyphen", "data": result}
-                raise Exception()
-            else:
-                # not None if ward contains '-' or '&' or ',' or a single digit
-                regexpn2 = r"((?:^\D+)(?P<hypen>(\d+)(?:\s*)-(?:\s*)(\d+$)))|((?:^\D+)(?P<single>(\d+$)))|((?:^\D+)(?P<amp>(\d+)(?:\s*)&(?:\s*)(\d+$)))|((?:^\D+)(?P<comma>(\d+)(?:,\d+)*))"
-                x = re.search(regexpn2, ward)
-                if x is None:
-                    return {"type": "unmatched", "data": ward}
-                elif x.group('single'):
-                    return {"type": "single", "data": x.group('single')}
-                elif x.group('hypen'):
-                    return {"type": "hypen", "data": x.group('hypen')}
-                elif x.group('amp'):
-                    return {"type": "amp", "data": x.group('amp')}
-                elif x.group('comma'):
-                    return {"type": "comma", "data": x.group('comma')}
-                else:
-                    raise Exception()
-        else: 
+    if ward in ['County Totals:', 'Office Totals:']:
+        pass
+    elif ward != np.nan:
+        # not None if ward contants both '-' and ',' e.g. 'foo bar bazz 1-3,5-7,9'
+        regexpn = r"(,.*-)|(-.*,)"
+        x = re.search(regexpn, ward)
+        if x is not None:
+            if result := extract_numbers(ward): 
+                return {"type": "commahyphen", "data": result}
             raise Exception()
-        
+        else:
+            # not None if ward contains '-' or '&' or ',' or a single digit
+            regexpn2 = r"((?:^\D+)(?P<hypen>(\d+)(?:\s*)-(?:\s*)(\d+$)))|((?:^\D+)(?P<single>(\d+$)))|((?:^\D+)(?P<amp>(\d+)(?:\s*)&(?:\s*)(\d+$)))|((?:^\D+)(?P<comma>(\d+)(?:,\d+)*))"
+            x = re.search(regexpn2, ward)
+            if x is None:
+                return {"type": "unmatched", "data": ward}
+            elif x.group('single'):
+                return {"type": "single", "data": x.group('single')}
+            elif x.group('hypen'):
+                return {"type": "hypen", "data": x.group('hypen')}
+            elif x.group('amp'):
+                return {"type": "amp", "data": x.group('amp')}
+            elif x.group('comma'):
+                return {"type": "comma", "data": x.group('comma')}
+            else:
+                raise Exception()
+    else:
+        raise Exception()
+    
+
+def ProcessReportingUnitData(df, wards_df, ward_fips_list):
+    """
+    Process reporting unit data by distributing values proportionally based on VAP.
+
+    This function processes reporting unit data where the EXPANDEDGEOID represents multiple wards.
+    It distributes values from columns like 'SUPCTTOT23' and 'SUPCTDEM23' proportionally to each 
+    ward based on the VAP (Voting Age Population) in `wards_df`.
+
+    Args:
+        df: DataFrame containing reporting unit data.
+        wards_df: DataFrame containing ward-level VAP data.
+        ward_fips_list: List of ward FIPS codes to consider.
+
+    Returns:
+        DataFrame with values distributed to individual wards based on VAP.
+    """
+    df_all = pd.DataFrame()
+    for row in df.itertuples(index=False):
+        if len(row.EXPANDEDGEOID) <= 14: 
+            frame = pd.Series(row).to_frame().T
+            frame.columns = df.columns
+            df_all = pd.concat([df_all, frame], axis=0, ignore_index=True)  
+
+    for row in df.itertuples(index=False):
+        if len(row.EXPANDEDGEOID) > 14:
+            geoValues = row.EXPANDEDGEOID.split('|')
+            df_row = wards_df.loc[(wards_df['GEOID'].isin(geoValues)) & 
+                                (wards_df['WARD_FIPS'].isin(ward_fips_list))]
+            total_vap = df_row['PERSONS18'].sum()
+            for r in df_row.itertuples(index=False):
+                frame = pd.Series(row).to_frame().T
+                frame.columns = df.columns        
+                vap_fraction = r.PERSONS18 / total_vap 
+                frame['EXPANDEDGEOID'] = r.GEOID
+                for col in ['SUPCTTOT23', 'SUPCTDEM23']:
+                    frame[col] = int(frame[col] * vap_fraction)
+                frame['Wards'] = ' '.join(['Ward', r.GEOID[-1]])
+                df_all = pd.concat([df_all, frame], axis=0, ignore_index=True)  
+
+    df_all['GEOID'] = df_all['EXPANDEDGEOID']
+    df_all.drop(columns=['EXPANDEDGEOID', 'Wards'], inplace=True)
+    df_all = ColumnMove(df_all, 'GEOID', 0)
+    df_all.sort_values(by=['CNTY_FIPS', 'MCD_FIPS', 'GEOID'], inplace=True)
+    df_all.reset_index(drop=True, inplace=True)
+    return df_all
+
         
 def ConvertWardStrings(row):
     """
@@ -206,8 +249,8 @@ def ConvertWardStrings(row):
     """
     x = re.search(r'(^\D+)', row)
     pos = row.find('Ward')
-    startrow = row[0:pos]
-    subrow = row[pos:len(row)]
+    startrow = row[:pos]
+    subrow = row[pos:]
     if subrow in keys:
         return ward_mappings[subrow]
     else:
@@ -238,7 +281,7 @@ def ConvertWardFormat(row, converter):
                 return "Wards %s" % (",".join([str(x) for x in range(int(search.group(1)), int(search.group(2))+1)]))
         elif row['type'] == 'comma':
             search = re.search(r'(\d+)((?:\s*),(?:\s*)*)', row['data'])
-            return "Wards %s" % (search.string)
+            return f"Wards {search.string}"
         elif row['type'] == 'single':
             search = re.search(r'(\d+$)', row['data'])
             return "Ward %d" % (int(search.group(1), 10))
@@ -247,16 +290,16 @@ def ConvertWardFormat(row, converter):
             return "Wards %d,%d" % (int(search.group(1)), int(search.group(2)))
         elif row['type'] == 'commahyphen':
             search = re.search(r'(\d+)((?:\s*),(?:\s*)*)', row['data'])
-            return "Wards %s" % (search.string)
+            return f"Wards {search.string}"
         elif row['type'] == 'unmatched':
-            return converter(row['ReportingUnit'])    
+            return converter(row['ReportingUnit'])
     except AttributeError:
         return converter(row['ReportingUnit'])
     
 def TitleCaseReportingCounty(cnty):
-    if cnty == "La Crosse" or cnty == "LA CROSSE":
+    if cnty in ["La Crosse", "LA CROSSE"]:
         return "La_Crosse"
-    if cnty == "St. Croix" or cnty == "ST.CROIX":
+    if cnty in ["St. Croix", "ST.CROIX"]:
         return "St_Croix"
     tokens = cnty.split()
     cntyname = "_".join(tokens)
@@ -265,8 +308,7 @@ def TitleCaseReportingCounty(cnty):
 def ConvertRow(row):
     x = re.search(r'(^\D+)', row)
     pos = row.find('Ward')
-    startrow = row[0:pos].strip()
-    return startrow    
+    return row[:pos].strip()    
 
 def TitleCaseReportingMcd(row):
     """
@@ -294,8 +336,8 @@ def TitleCaseReportingMcd(row):
         ctv = 'Village of '
     else:
         raise Exception("Unexpected CTV option")
-        
-    return("%s%s") %(ctv, row['MCD_NAME'].title())
+
+    return f"{ctv}{row['MCD_NAME'].title()}"
 
 def partial_fips(row):
     return("%s%s" % (row['CNTY_FIPS'], '{0:05d}'.format(int(row['COUSUBFP']))))     
@@ -357,10 +399,7 @@ def CreateElectionData(target_counties, columns_to_keep, geocode_df, str_to_appe
 
 def compute_ward(ward):
     lst = ward.split(' ')
-    if len(lst) == 1:
-        return lst[0].zfill(4)  
-    else:
-        return lst[-1].zfill(4)
+    return lst[0].zfill(4) if len(lst) == 1 else lst[-1].zfill(4)
 
 def CreateVoterRegistrationData(target_counties, columns_to_keep, fips_dict, geocode_df, path, file, skiprows = 0):
     df = InitializeDataFrames(path, file, remote_file=False, kwargs = {'skiprows': skiprows})

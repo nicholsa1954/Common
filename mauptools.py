@@ -122,8 +122,7 @@ def GetBlocksOrWards(path, file, columns_to_keep, target_county_fips):
 
 	print(f'Blocks/wards in state: {len(blocks_df)}')
 	target_county_blocks_df = blocks_df.loc[
-		blocks_df['CNTY_FIPS'].isin(target_county_fips), columns_to_keep
-	]
+		blocks_df['CNTY_FIPS'].isin(target_county_fips)][ columns_to_keep ]
 
 	target_county_blocks_df = MaupRepair(target_county_blocks_df)
 	target_county_blocks_df.reset_index(drop=True, inplace=True)
