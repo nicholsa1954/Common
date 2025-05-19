@@ -106,7 +106,7 @@ def PreprocessData(df, str_to_append, target_county_list):
         Preprocessed election results data
     """
     
-    total_column_name = ''.join(['Total', str_to_append])
+    total_column_name = ' '.join(['Total', str_to_append])
     df.rename(columns={'Unnamed: 0': 'CNTY_NAME', 'Unnamed: 1': 'ReportingUnit', 
             'Unnamed: 2': total_column_name, 'SCATTERING': 'Other'}, inplace=True)
     df['CNTY_NAME'] = df['CNTY_NAME'].str.strip().ffill()
@@ -187,7 +187,7 @@ def ProcessReportingUnitString(ward):
         raise Exception()
     
 
-def ProcessReportingUnitData(df, wards_df, ward_fips_list):
+def ProcessReportingUnitData(df, wards_df, data_column_list, ward_fips_list = None):
     """
     Process reporting unit data by distributing values proportionally based on VAP.
 
@@ -198,10 +198,11 @@ def ProcessReportingUnitData(df, wards_df, ward_fips_list):
     Args:
         df: DataFrame containing reporting unit data.
         wards_df: DataFrame containing ward-level VAP data.
+        data_column_list: List of columns to distribute values from.
         ward_fips_list: List of ward FIPS codes to consider.
 
     Returns:
-        DataFrame with values distributed to individual wards based on VAP.
+        DataFrame with values distributed from reporting units to individual wards based on VAP.
     """
     df_all = pd.DataFrame()
     for row in df.itertuples(index=False):
@@ -213,16 +214,22 @@ def ProcessReportingUnitData(df, wards_df, ward_fips_list):
     for row in df.itertuples(index=False):
         if len(row.EXPANDEDGEOID) > 14:
             geoValues = row.EXPANDEDGEOID.split('|')
-            df_row = wards_df.loc[(wards_df['GEOID'].isin(geoValues)) & 
-                                (wards_df['WARD_FIPS'].isin(ward_fips_list))]
+            if ward_fips_list is not None:
+                df_row = wards_df.loc[(wards_df['GEOID'].isin(geoValues)) & 
+                                    (wards_df['WARD_FIPS'].isin(ward_fips_list))]
+            else:
+                df_row = wards_df.loc[wards_df['GEOID'].isin(geoValues)]
             total_vap = df_row['PERSONS18'].sum()
             for r in df_row.itertuples(index=False):
                 frame = pd.Series(row).to_frame().T
-                frame.columns = df.columns        
-                vap_fraction = r.PERSONS18 / total_vap 
-                frame['EXPANDEDGEOID'] = r.GEOID
-                for col in ['SUPCTTOT23', 'SUPCTDEM23']:
+                frame.columns = df.columns  
+                if total_vap > 0:
+                    vap_fraction = r.PERSONS18 / total_vap 
+                else:
+                    vap_fraction = 0
+                for col in data_column_list:
                     frame[col] = int(frame[col] * vap_fraction)
+                frame['EXPANDEDGEOID'] = r.GEOID
                 frame['Wards'] = ' '.join(['Ward', r.GEOID[-1]])
                 df_all = pd.concat([df_all, frame], axis=0, ignore_index=True)  
 

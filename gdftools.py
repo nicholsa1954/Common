@@ -9,6 +9,7 @@ import geopandas as gpd
 import pandas as pd
 import shapely
 from shapely import wkt
+import matplotlib.pyplot as plt
 
 from testVPNConnection import testVPNConnection
 
@@ -1084,8 +1085,6 @@ def TrimGDFToBounds(gdf, bounds, bounds_area=None):
 	##### functions to support asynchronous processing
 
 
-
-
 def GetDistrictsInBounds(datafile, rename_column, bounds_gdf=None):
 	"""
 	Reads a datafile containing district information and returns the districts within specified bounds.
@@ -1109,3 +1108,11 @@ def GetDistrictsInBounds(datafile, rename_column, bounds_gdf=None):
 		return TrimGDFToBounds(gdf[common_cols], bounds_gdf)
 	else:
 		print(" ".join(["Data file", datafile, "not found!"]))
+
+
+def PlotGDF(gdf, color = 'indigo', width = 5, height = 5, alpha = 0.65, edgecolor = 'black', linewidth = 1.0):
+    fig, ax = plt.subplots(1, 1, figsize=(width, height))
+    gdf.plot(ax = ax, color = color, alpha = alpha, edgecolor = edgecolor, linewidth = linewidth)
+    ax.set_axis_off()
+    plt.show()
+

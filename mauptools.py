@@ -8,7 +8,6 @@ from gdftools import InitializeGeoDataFrames
 from edatools import  ColumnMove
 
 sys.path.append('../SEIU/SEIU_2025_Election')
-from common import racine_fips_dict, brown_fips_dict, milwaukee_fips_dict
 
 wisconsin_transverse_mercator = 3070
 common_epsg = 4326
@@ -121,8 +120,13 @@ def GetBlocksOrWards(path, file, columns_to_keep, target_county_fips):
 	blocks_df = InitializeGeoDataFrames(path, file, epsg=wisconsin_transverse_mercator, remote_file=False)
 
 	print(f'Blocks/wards in state: {len(blocks_df)}')
-	target_county_blocks_df = blocks_df.loc[
-		blocks_df['CNTY_FIPS'].isin(target_county_fips)][ columns_to_keep ]
+	if target_county_fips is not None:
+		target_county_blocks_df = blocks_df.loc[
+			blocks_df['CNTY_FIPS'].isin(target_county_fips)][ columns_to_keep ]
+  
+	else:
+		target_county_blocks_df = blocks_df[ columns_to_keep ]
+		print('No target county FIPS provided. Using all blocks/wards in the state.')
 
 	target_county_blocks_df = MaupRepair(target_county_blocks_df)
 	target_county_blocks_df.reset_index(drop=True, inplace=True)
