@@ -16,11 +16,11 @@ wisconsin_crs = f'EPSG:{wisconsin_epsg}'
 from ward_mappings import ward_mappings
 keys = ward_mappings.keys()
 
-def InitializeWECDataFrames(path, file, geocodes, label_row, body_row,  presidential, remote_file, kwargs):
+def InitializeWECDataFrames(path, file, geocodes, label_row, body_row,  columns_renamed, presidential, remote_file, kwargs):
     df = InitializeDataFrames(path, file,  remote_file, kwargs = kwargs)
     label = df.iloc[label_row,0].title()
     columns_to_keep = ['WEC Canvass Reporting System', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3','Unnamed: 4',] #'Total Votes Cast', 'DEM', 'REP'   
-    columns_renamed = ['CNTY_NAME', 'ReportingUnit', 'TotalVotes', 'DEM', 'REP']
+    #columns_renamed = ['CNTY_NAME', 'ReportingUnit', 'TotalVotes', 'DEM', 'REP']
     df = df[columns_to_keep]
     df.rename(columns = dict(zip(columns_to_keep, columns_renamed)), inplace = True)
     df = df.iloc[body_row:]
@@ -37,7 +37,8 @@ def InitializeWECDataFrames(path, file, geocodes, label_row, body_row,  presiden
     df = df.iloc[1:]
     df.reset_index(drop=True, inplace=True)
     
-    df = df.loc[(df['ReportingUnit'] != 'County Totals:') & (df['ReportingUnit'] != 'Office Totals:') & (df['ReportingUnit'].notna())]
+    office_totals = df.loc[len(df) - 1]
+    df = df.loc[(df['ReportingUnit'] != 'County Totals:') & (df['CNTY_NAME'] != 'Office Totals:') & (df['ReportingUnit'].notna())]
     df['DEM'] = df['DEM'].astype(int)
     df['REP'] = df['REP'].astype(int)
     df['TotalVotes'] = df['TotalVotes'].astype(int)
@@ -83,7 +84,7 @@ def InitializeWECDataFrames(path, file, geocodes, label_row, body_row,  presiden
     else:
         df = df.rename(columns = {'TotalVotes':'DistTotalVotes', 'DEM':'DistDEM', 'REP':'DistREP'})
         
-    return label, dem_name, rep_name, df     
+    return label, dem_name, rep_name, df, office_totals     
 
 def PreprocessData(df, str_to_append, target_county_list):
     """
@@ -187,19 +188,20 @@ def ProcessReportingUnitString(ward):
         raise Exception()
     
 
-def ProcessReportingUnitData(df, wards_df, data_column_list, ward_fips_list = None):
+def ProcessReportingUnitData(df, wards_df, data_column_list, 
+        ward_fips_list = None, cleanup_redundant_columns = True):  
     """
     Process reporting unit data by distributing values proportionally based on VAP.
 
     This function processes reporting unit data where the EXPANDEDGEOID represents multiple wards.
-    It distributes values from columns like 'SUPCTTOT23' and 'SUPCTDEM23' proportionally to each 
-    ward based on the VAP (Voting Age Population) in `wards_df`.
+    It distributes values from columns in data_column_list proportionally to each 
+    ward based on the VAP (Voting Age Population) given in `wards_df`.
 
     Args:
         df: DataFrame containing reporting unit data.
         wards_df: DataFrame containing ward-level VAP data.
         data_column_list: List of columns to distribute values from.
-        ward_fips_list: List of ward FIPS codes to consider.
+        ward_fips_list: List of ward FIPS codes to consider. If None, all wards are considered.
 
     Returns:
         DataFrame with values distributed from reporting units to individual wards based on VAP.
@@ -228,13 +230,14 @@ def ProcessReportingUnitData(df, wards_df, data_column_list, ward_fips_list = No
                 else:
                     vap_fraction = 0
                 for col in data_column_list:
-                    frame[col] = int(frame[col] * vap_fraction)
+                    frame[col] = frame[col] * vap_fraction
                 frame['EXPANDEDGEOID'] = r.GEOID
                 frame['Wards'] = ' '.join(['Ward', r.GEOID[-1]])
                 df_all = pd.concat([df_all, frame], axis=0, ignore_index=True)  
 
     df_all['GEOID'] = df_all['EXPANDEDGEOID']
-    df_all.drop(columns=['EXPANDEDGEOID', 'Wards'], inplace=True)
+    if cleanup_redundant_columns:
+        df_all.drop(columns=['EXPANDEDGEOID', 'Wards'], inplace=True)
     df_all = ColumnMove(df_all, 'GEOID', 0)
     df_all.sort_values(by=['CNTY_FIPS', 'MCD_FIPS', 'GEOID'], inplace=True)
     df_all.reset_index(drop=True, inplace=True)
