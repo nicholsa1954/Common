@@ -33,7 +33,7 @@ def MaupRepair(gdf):
 		>>> repaired_gdf = MaupRepair(gdf)
 	"""
 	start_time = time.time()
-	print('Checking geodataframe...')
+	print('Examining...')
 	
 	if not maup.doctor(gdf):
 		print('Repairing geodataframe ...')
@@ -46,7 +46,7 @@ def MaupRepair(gdf):
 		print('Geodataframe does not need repair.')
 	
 	elapsed_time = time.time() - start_time
-	print(f'Repair process completed in {elapsed_time:.2f} seconds.')
+	print(f'Process completed in {elapsed_time:.2f} seconds.')
 	return gdf
 
 def AssignGeoSourceToTarget(source, target, do_repairs = True, reset_crs = True):
@@ -80,23 +80,33 @@ def AssignGeoSourceToTarget(source, target, do_repairs = True, reset_crs = True)
 		  elsewhere in the code.
 		"""
 
-	if reset_crs:
+	if reset_crs and (source.crs != wisconsin_transverse_mercator):
+		print('Resetting source CRS to Wisconsin Transverse Mercator...')
+		source = source.set_crs(epsg = wisconsin_transverse_mercator, allow_override=True)
 		source = source.to_crs(epsg = wisconsin_transverse_mercator)
-		target = target.to_crs(epsg = wisconsin_transverse_mercator)
-		
-	if do_repairs:
-		print('beginning repairs...')
-		print('checking source...')
-		source = MaupRepair(source)
-		print('checking target...')
-		target = MaupRepair(target)
 
-	mapping = maup.assign(source, target)
+	if reset_crs and (target.crs != wisconsin_transverse_mercator):
+		print('Resetting target CRS to Wisconsin Transverse Mercator...')
+		target = target.set_crs(epsg = wisconsin_transverse_mercator, allow_override=True)
+		target = target.to_crs(epsg = wisconsin_transverse_mercator)  
+  
+	if source.crs == target.crs == wisconsin_transverse_mercator:
+		print('Source and target CRS are confirmed as Wisconsin Transverse Mercator.')
+	else:
+		print('Source and target CRS are inconsistent. Returning None.')
+		return None
+ 
+	if do_repairs:
+		print('Beginning repairs to source gdf...')
+		source = MaupRepair(source)
+		print('Beginning repairs to target gdf...')
+		target = MaupRepair(target)
+  
+	print('Assigning source geometry to target geometry...')
+	result = maup.assign(source, target)
+	print('Done.')
+	return result
 	
-	if reset_crs:
-		source = source.to_crs(epsg = common_epsg)
-		target = target.to_crs(epsg = common_epsg)
-	return mapping
 
 def GetBlocksOrWards(path, file, columns_to_keep, target_county_fips):
 	"""
