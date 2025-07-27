@@ -18,12 +18,16 @@ import requests
 from gspread_dataframe import get_as_dataframe, set_with_dataframe
 from oauth2client.service_account import ServiceAccountCredentials
 
-key_path = '../../Keys/'
+# key_path = '../../Keys/'
 key_file = "createapikey-332513-213a2ef92b3e.json"
-file = pathlib.Path(key_file)
-keyfile = pathlib.Path(key_path, file).resolve()
 
-def WriteToGoogleSheets(df, sheet_id, tab_name, mode):
+
+def CreateKeyFile(key_path, key_file = key_file):
+    file = pathlib.Path(key_file)
+    return pathlib.Path(key_path, file).resolve()
+
+def WriteToGoogleSheets(df, sheet_id, tab_name, mode, key_path, key_file = key_file):
+    keyfile = CreateKeyFile(key_path, key_file)
     if keyfile.exists():
         gc = gs.service_account(filename=keyfile)
         url = f'https://docs.google.com/spreadsheets/d/{sheet_id}'
@@ -62,8 +66,9 @@ def WriteToGoogleSheets(df, sheet_id, tab_name, mode):
             return True
     else: print('WriteToGoogleSheets failed finding keyfile', keyfile)
 
-def ReadDictFromGoogleSheets(sheet_id, tab_names):
+def ReadDictFromGoogleSheets(sheet_id, tab_names, key_path, key_file = key_file):
     data_dict = {}
+    keyfile = CreateKeyFile(key_path, key_file)
     if keyfile.exists():
         gc = gs.service_account(filename=keyfile)
         url = f'https://docs.google.com/spreadsheets/d/{sheet_id}'
@@ -85,7 +90,7 @@ def ReadDictFromGoogleSheets(sheet_id, tab_names):
         return data_dict
     else: print('ReadDictFromGoogleSheets failed finding keyfile', keyfile)
 
-def ReadFromGoogleSheets(sheet_id, tab_names, evaluate_formulas = True):
+def ReadFromGoogleSheets(sheet_id, tab_names,  key_path, key_file = key_file, evaluate_formulas = True,):
     """
     Reads data from Google Sheets and returns a list of DataFrames.
 
@@ -116,6 +121,7 @@ def ReadFromGoogleSheets(sheet_id, tab_names, evaluate_formulas = True):
     """
     
     data = []
+    keyfile = CreateKeyFile(key_path, key_file)
     if keyfile.exists():
         gc = gs.service_account(filename=keyfile)
         url = f'https://docs.google.com/spreadsheets/d/{sheet_id}'

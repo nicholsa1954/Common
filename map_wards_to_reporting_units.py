@@ -16,11 +16,11 @@ wisconsin_crs = f'EPSG:{wisconsin_epsg}'
 from ward_mappings import ward_mappings
 keys = ward_mappings.keys()
 
-def InitializeWECDataFrames(path, file, geocodes, label_row, body_row,  columns_renamed, presidential, remote_file, kwargs):
+def InitializeWECDataFrames(path, file, geocodes, label_row, body_row,   presidential, remote_file, kwargs):
     df = InitializeDataFrames(path, file,  remote_file, kwargs = kwargs)
     label = df.iloc[label_row,0].title()
     columns_to_keep = ['WEC Canvass Reporting System', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3','Unnamed: 4',] #'Total Votes Cast', 'DEM', 'REP'   
-    #columns_renamed = ['CNTY_NAME', 'ReportingUnit', 'TotalVotes', 'DEM', 'REP']
+    columns_renamed = ['CNTY_NAME', 'ReportingUnit', 'TotalVotes', 'DEM', 'REP']
     df = df[columns_to_keep]
     df.rename(columns = dict(zip(columns_to_keep, columns_renamed)), inplace = True)
     df = df.iloc[body_row:]
@@ -84,7 +84,7 @@ def InitializeWECDataFrames(path, file, geocodes, label_row, body_row,  columns_
     else:
         df = df.rename(columns = {'TotalVotes':'DistTotalVotes', 'DEM':'DistDEM', 'REP':'DistREP'})
         
-    return label, dem_name, rep_name, df, office_totals     
+    return label, dem_name, rep_name, office_totals, df     
 
 def PreprocessData(df, str_to_append, target_county_list):
     """
@@ -189,7 +189,8 @@ def ProcessReportingUnitString(ward):
     
 
 def ProcessReportingUnitData(df, wards_df, data_column_list, 
-        ward_fips_list = None, cleanup_redundant_columns = True):  
+        ward_fips_list = None, cleanup_redundant_columns = True,
+        keep_geometry = False):  
     """
     Process reporting unit data by distributing values proportionally based on VAP.
 
@@ -230,7 +231,7 @@ def ProcessReportingUnitData(df, wards_df, data_column_list,
                 else:
                     vap_fraction = 0
                 for col in data_column_list:
-                    frame[col] = frame[col] * vap_fraction
+                    frame[col] = int(frame[col] * vap_fraction)
                 frame['EXPANDEDGEOID'] = r.GEOID
                 frame['Wards'] = ' '.join(['Ward', r.GEOID[-1]])
                 df_all = pd.concat([df_all, frame], axis=0, ignore_index=True)  
@@ -241,6 +242,8 @@ def ProcessReportingUnitData(df, wards_df, data_column_list,
     df_all = ColumnMove(df_all, 'GEOID', 0)
     df_all.sort_values(by=['CNTY_FIPS', 'MCD_FIPS', 'GEOID'], inplace=True)
     df_all.reset_index(drop=True, inplace=True)
+    if keep_geometry:
+        return SetIntersection(df_all, wards_df[['GEOID', 'geometry']], on='GEOID')
     return df_all
 
         

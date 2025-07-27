@@ -11,6 +11,12 @@ import shapely
 from shapely import wkt
 import matplotlib.pyplot as plt
 
+world_epsg = 4326  
+world_crs = 'EPSG:' + str(world_epsg)
+
+wisconsin_epsg = 3070 #3070 is the Wisconsin Mercator Projection
+wisconsin_crs = 'EPSG:' + str(wisconsin_epsg)
+
 from testVPNConnection import testVPNConnection
 
 common_cols = ["id", "lat", "lon", "geometry", "z_layer"]
@@ -33,6 +39,12 @@ def ConvertGDFtoGJSN(gdf):
 		gjsn = geojson.load(f)
 	out_file.unlink()
 	return gjsn
+
+def ConvertDFToGDF(df, crs = world_crs):
+	if 'geometry' not in df.columns:
+		return None
+	df['geometry'] = df['geometry'].apply(lambda poly: poly.wkt)
+	return gpd.GeoDataFrame(df, geometry = df['geometry'].apply(wkt.loads), crs = crs)
 
 
 def InitializeGeoDataFrames(path, data_file, epsg = 4326, remote_file=True, kwargs={}):
@@ -1115,4 +1127,6 @@ def PlotGDF(gdf, color = 'indigo', width = 5, height = 5, alpha = 0.65, edgecolo
     gdf.plot(ax = ax, color = color, alpha = alpha, edgecolor = edgecolor, linewidth = linewidth)
     ax.set_axis_off()
     plt.show()
+
+
 
