@@ -22,6 +22,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 key_file = "createapikey-332513-213a2ef92b3e.json"
 
 
+
 def CreateKeyFile(key_path, key_file = key_file):
     file = pathlib.Path(key_file)
     return pathlib.Path(key_path, file).resolve()
@@ -35,6 +36,8 @@ def WriteToGoogleSheets(df, sheet_id, tab_name, mode, key_path, key_file = key_f
             spreadsheet = gc.open_by_url(url)
         except gs.exceptions.WorksheetNotFound:
             print('WriteToGoogleSheets cant find that spreadsheet!')
+        except gs.exceptions.NoValidUrlKeyFound:
+            print('No valid URL key found!')
             
         if mode == 'w':
             try:
