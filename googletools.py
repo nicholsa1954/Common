@@ -18,10 +18,7 @@ import requests
 from gspread_dataframe import get_as_dataframe, set_with_dataframe
 from oauth2client.service_account import ServiceAccountCredentials
 
-# key_path = '../../Keys/'
 key_file = "createapikey-332513-213a2ef92b3e.json"
-
-
 
 def CreateKeyFile(key_path, key_file = key_file):
     file = pathlib.Path(key_file)
@@ -69,7 +66,7 @@ def WriteToGoogleSheets(df, sheet_id, tab_name, mode, key_path, key_file = key_f
             return True
     else: print('WriteToGoogleSheets failed finding keyfile', keyfile)
 
-def ReadDictFromGoogleSheets(sheet_id, tab_names, key_path, key_file = key_file):
+def ReadDictFromGoogleSheets(sheet_id, tab_names, key_path, skiprows = 0, key_file = key_file):
     data_dict = {}
     keyfile = CreateKeyFile(key_path, key_file)
     if keyfile.exists():
@@ -88,12 +85,12 @@ def ReadDictFromGoogleSheets(sheet_id, tab_names, key_path, key_file = key_file)
                       tab_name, 'from spreadsheet!')
     
             print('Getting dataframe for', tab_name, '...')
-            data_dict[tab_name] = get_as_dataframe(worksheet, parse_dates=True)
+            data_dict[tab_name] = get_as_dataframe(worksheet, skiprows = skiprows, parse_dates=True)
         print('Data complete.')
         return data_dict
     else: print('ReadDictFromGoogleSheets failed finding keyfile', keyfile)
 
-def ReadFromGoogleSheets(sheet_id, tab_names,  key_path, key_file = key_file, evaluate_formulas = True,):
+def ReadFromGoogleSheets(sheet_id, tab_names,  key_path, skiprows = 0, key_file = key_file, evaluate_formulas = True,):
     """
     Reads data from Google Sheets and returns a list of DataFrames.
 
@@ -140,7 +137,7 @@ def ReadFromGoogleSheets(sheet_id, tab_names,  key_path, key_file = key_file, ev
                 print(f"'ReadFromGoogleSheets' can't get worksheet {tab_name} from spreadsheet!")
     
             print(f"Getting dataframe from tab '{tab_name}' ...")
-            data.append(get_as_dataframe(worksheet, evaluate_formulas = evaluate_formulas, parse_dates=True))
+            data.append(get_as_dataframe(worksheet, skiprows = skiprows, evaluate_formulas = evaluate_formulas, parse_dates=True))
         print('Data complete.')
         return data
 
