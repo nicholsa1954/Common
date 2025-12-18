@@ -44,7 +44,7 @@ def WriteToGoogleSheets(df, sheet_id, tab_name, mode, key_path, key_file = key_f
                 worksheet = spreadsheet.add_worksheet(title=tab_name, rows = len(df)+1, cols = len(df.columns))
             ### resize = True sets the worksheet size to the dataframe size
             set_with_dataframe(worksheet, df, include_index = False, 
-                               include_column_header=True, resize=True)
+                        include_column_header=True, resize=True)
             return True
             
         elif mode == 'a':
@@ -56,15 +56,48 @@ def WriteToGoogleSheets(df, sheet_id, tab_name, mode, key_path, key_file = key_f
                 ## https://stackoverflow.com/questions/67343865/gspread-exceptions-apierror-exceeds-grid-limits-adding-new-rows-and-dataframe
                 worksheet = spreadsheet.worksheet(tab_name)
                 set_with_dataframe(worksheet, df, include_index=False,
-                                   include_column_header=False,
-                                   row = count + 1,
-                                   resize=False)                
+                        include_column_header=False,
+                        row = count + 1,
+                        resize=False)                
             except gs.exceptions.WorksheetNotFound:
                 worksheet = spreadsheet.add_worksheet(title=tab_name, rows = len(df)+1, cols = len(df.columns))
                 set_with_dataframe(worksheet, df, include_index = False, 
-                                   include_column_header=True, resize=True)
+                        include_column_header=True, resize=True)
             return True
     else: print('WriteToGoogleSheets failed finding keyfile', keyfile)
+    
+def WriteMultiIndexToGoogleSheets(df, sheet_id, tab_name, mode, 
+                key_path, key_file = key_file):
+    keyfile = CreateKeyFile(key_path, key_file)
+    if keyfile.exists():
+        gc = gs.service_account(filename=keyfile)
+        url = f'https://docs.google.com/spreadsheets/d/{sheet_id}'
+        try:
+            spreadsheet = gc.open_by_url(url)
+        except gs.exceptions.WorksheetNotFound:
+            print('WriteToGoogleSheets cant find that spreadsheet!')
+        except gs.exceptions.NoValidUrlKeyFound:
+            print('No valid URL key found!')
+            
+        if mode == 'w':
+            try:
+                worksheet = spreadsheet.worksheet(tab_name)
+                worksheet.clear()
+            except gs.exceptions.WorksheetNotFound:
+                worksheet = spreadsheet.add_worksheet(title=tab_name, 
+                            rows = len(df)+1, cols = len(df.columns))
+                
+            ### resize = True sets the worksheet size to the dataframe size
+            set_with_dataframe(worksheet, df, resize = True, 
+                            include_index = True, include_column_header = True)   
+            return worksheet
+
+        else:
+            print('write mode has to be "w"')
+            return None
+    else:
+        print(f'Key file {keyfile} does not exist!')
+        return None    
 
 def ReadDictFromGoogleSheets(sheet_id, tab_names, key_path, skiprows = 0, key_file = key_file):
     data_dict = {}
@@ -90,7 +123,7 @@ def ReadDictFromGoogleSheets(sheet_id, tab_names, key_path, skiprows = 0, key_fi
         return data_dict
     else: print('ReadDictFromGoogleSheets failed finding keyfile', keyfile)
 
-def ReadFromGoogleSheets(sheet_id, tab_names,  key_path, skiprows = 0, key_file = key_file, evaluate_formulas = True,):
+def ReadFromGoogleSheets(sheet_id, tab_names,  key_path, skiprows = 0, key_file = key_file, evaluate_formulas = True):
     """
     Reads data from Google Sheets and returns a list of DataFrames.
 
@@ -144,7 +177,8 @@ def ReadFromGoogleSheets(sheet_id, tab_names,  key_path, skiprows = 0, key_file 
     else: print(f"'ReadFromGoogleSheets' failed finding keyfile {keyfile}.")
     
     
-def GetWkbkUpdateTime(sheet_id):
+def GetWkbkUpdateTime(sheet_id, key_path, key_file = key_file):
+    keyfile = CreateKeyFile(key_path, key_file)
     if keyfile.exists():
         gc = gs.service_account(filename=keyfile)
         url = f'https://docs.google.com/spreadsheets/d/{sheet_id}'
@@ -165,3 +199,5 @@ def GetWkbkUpdateTime(sheet_id):
         date_string = response['revisions'][-1]['modifiedTime']
         local_tz = pytz.timezone("America/Chicago")
         return datetime.strptime(date_string, format_string).astimezone(local_tz)    
+    
+    else: print('GetWkbkUpdateTime failed finding keyfile', keyfile)

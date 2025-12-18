@@ -106,7 +106,7 @@ def CreateHoverTemplate(gdf):
         result.append(template)
     return result
 
-def GetHoverlabelMapbox(gdf, template, color):
+def GetHoverLabelMapbox(gdf, template, color):
     return go.Scattermapbox(
         mode = 'text',
         name = '',
