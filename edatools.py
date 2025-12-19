@@ -73,11 +73,11 @@ def ConvertNaiveDatesToUtc(df, date_columns, date_only = True):
     Args:
         df (_type_): Pandas DataField. 
         date_columns (_type_): list<string> _description_ One or more
-        columns of the DataFram df where we will perform the conversion
+        columns of the DataFrame df where we will perform the conversion
         date_only (bool, optional): Return only a date. Defaults to True.
 
     Returns:
-        _type_: _description_  DataFrame with spedified columns converted to
+        _type_: _description_  DataFrame with specified columns converted to
         type DateTime
     """
     for column in date_columns:
@@ -103,7 +103,10 @@ def IsBlank(s):
 
 def IsNotBlank(s):
     if isinstance(s, float) or isinstance(s, int): return False
-    return bool(s and not s.isspace())
+    try:
+        return bool(s and not s.isspace())
+    except ValueError:
+        print(type(s))    
 
 def SplitTime(theTime):
     if isinstance(theTime, int) or isinstance(theTime, float):
@@ -139,7 +142,7 @@ def ConvertToDatetime(columns_to_convert, df):
         df.insert(indx, col_name, series)
     return df
 
-def ParsePhoneUS(phone_number):
+def ParsePhoneUS(phone_number, format = INTERNATIONAL):
     default_phone = ''
     if isinstance(phone_number, float) or isinstance(phone_number, int): return default_phone
     assert(isinstance(phone_number, str))
@@ -153,6 +156,8 @@ def ParsePhoneUS(phone_number):
         phone_number = phone_number[:10]
     try:
         my_number = phonenumbers.parse(phone_number, region = 'US')
+	if format == INTERNATIONAL:
+		return phonenumbers.format_number(my_number, phonenumbers.PhoneNumberFormat.INTERNATIONAL)[2:]
         return phonenumbers.format_number(my_number, phonenumbers.PhoneNumberFormat.NATIONAL)
     except phonenumbers.NumberParseException:
         return default_phone
@@ -166,7 +171,7 @@ def CleanPhone(df, phone_column = 'phone'):
         the phone numbers are found. Defaults to 'phone'.
 
     Returns:
-        Inpuyt DataFrame with specified column converted
+        input DataFrame with specified column converted
     """    """"""
     column_list = list(df.columns)
     default_phone = ''
@@ -271,5 +276,11 @@ def ColumnMove(df, col_name:str, new_index:int):
 	col = df.pop(col_name)
 	df.insert(new_index, col.name, col)	
 	return df
+
+def ColumnMoveToEnd(df, col_name:str):
+    """ move col to end of dataframe """
+    col = df.pop(col_name)
+    df[col.name] = col
+    return df
 	
 	
