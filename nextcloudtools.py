@@ -1,6 +1,6 @@
 import io
 import pandas as pd
-from nextcloud import NextCloud
+from nc_py_api import Nextcloud
 
 import sys
 sys.path.append('./')
@@ -23,26 +23,62 @@ http = urllib3.PoolManager(
     ca_certs=certifi.where()
 )
 
-def InitializeNextCloudDataFrames(path, data_file, remote_file = False):
+def InitializeNextCloudDataFrame(path, data_file, remote_file = False):
     
     if remote_file and not testVPNConnection():
         print('No VPN connection -- returning empty DataFrame.')
         return pd.DataFrame()
-    # if not Path(path).exists():
-    #     print("Can't find the path:", path,'-- returning empty DataFrame.')
-    #     print('Do you need to enter network credentials?')
-    #     return pd.DataFrame()
     
-    
-    with NextCloud(
-        NEXTCLOUD_URL,
-        user = NEXTCLOUD_USERNAME,
-        password = NEXTCLOUD_PASSWORD,
+    nxc = Nextcloud(
+        nextcloud_url = NEXTCLOUD_URL,
+        nc_auth_user = NEXTCLOUD_USERNAME,
+        nc_auth_pass = NEXTCLOUD_PASSWORD,
         session_kwargs ={
             'verify': True  # verify ssl
-            }) as nxc:
+            }) 
     
-        data_file = nxc.get_file(''.join([path, data_file]))
-        data_bytes_io = io.BytesIO(data_file.fetch_file_content())
-        data_bytes_io.seek(0)
-        return pd.read_excel(data_bytes_io, engine='openpyxl')
+    data_file = nxc.files.download(''.join([path, data_file]))
+    data_bytes_io = io.BytesIO(data_file)
+    data_bytes_io.seek(0)
+    return pd.read_excel(data_bytes_io, engine='openpyxl')
+
+def InitializeNextCloudDataFramesDict(remote_path, data_file, remote_file = False):
+    
+    if remote_file and not testVPNConnection():
+        print('No VPN connection -- returning empty DataFrame.')
+        return pd.DataFrame()
+    
+    nxc = Nextcloud(
+        nextcloud_url = NEXTCLOUD_URL,
+        nc_auth_user = NEXTCLOUD_USERNAME,
+        nc_auth_pass = NEXTCLOUD_PASSWORD,
+        session_kwargs ={
+            'verify': True  # verify ssl
+            }) 
+    
+    
+    data_file = nxc.files.download(''.join([remote_path, data_file]))
+    data_bytes_io = io.BytesIO(data_file)
+    data_bytes_io.seek(0)
+    return pd.read_excel(data_bytes_io, sheet_name=None, engine='openpyxl')
+
+def UploadDfToNextCloud(df, remote_path, remote_filename, overwrite = True):
+
+    nxc = Nextcloud(
+        nextcloud_url = NEXTCLOUD_URL,
+        nc_auth_user = NEXTCLOUD_USERNAME,
+        nc_auth_pass = NEXTCLOUD_PASSWORD)
+    
+    data_bytes_io = io.BytesIO()
+
+    remote_file_path = ''.join([remote_path, remote_filename])    
+    with pd.ExcelWriter(data_bytes_io, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False)
+        
+    data_bytes_io.seek(0)
+    result = nxc.files.upload_stream(
+        path = remote_file_path,
+        fp = data_bytes_io,
+        overwrite = overwrite
+    )
+    return result

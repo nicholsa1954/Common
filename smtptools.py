@@ -16,7 +16,7 @@ def SendEmailSecureWithImage(app_passwd, subject, sender, recipients, cc, bcc, p
         msg['Subject'] = subject
         msg['From'] = sender
         msg['To'] =  ', '.join(recipients)
-        msg['Cc'] =  ', '.join(cc)
+        # msg['Cc'] =  ', '.join(cc)
         ### Don't do this unless you want to publish the bcc list
         # msg['Bcc'] = ', '.join(bcc)        
         # set the plain text body
@@ -55,7 +55,8 @@ def SendEmailSecureWithImage(app_passwd, subject, sender, recipients, cc, bcc, p
             server.login(sender, app_passwd)
             # server.set_debuglevel(1)
             # include the cc and bcc list here but don't put bcc in the msg headers
-            server.sendmail(sender, (recipients + cc + bcc), msg.as_string())
+            # server.sendmail(sender, (recipients + cc + bcc), msg.as_string())
+            server.sendmail(sender, (bcc), msg.as_string())
             print("Secure email sent successfully!")
     except smtplib.SMTPException as e:
         print(f"SMTP error occurred: {e}")
