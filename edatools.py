@@ -142,7 +142,7 @@ def ConvertToDatetime(columns_to_convert, df):
         df.insert(indx, col_name, series)
     return df
 
-def ParsePhoneUS(phone_number, format = INTERNATIONAL):
+def ParsePhoneUS(phone_number, format = 'INTERNATIONAL'):
     default_phone = ''
     if isinstance(phone_number, float) or isinstance(phone_number, int): return default_phone
     assert(isinstance(phone_number, str))
@@ -156,8 +156,8 @@ def ParsePhoneUS(phone_number, format = INTERNATIONAL):
         phone_number = phone_number[:10]
     try:
         my_number = phonenumbers.parse(phone_number, region = 'US')
-	if format == INTERNATIONAL:
-		return phonenumbers.format_number(my_number, phonenumbers.PhoneNumberFormat.INTERNATIONAL)[2:]
+        if format == 'INTERNATIONAL':
+            return phonenumbers.format_number(my_number, phonenumbers.PhoneNumberFormat.INTERNATIONAL)[2:]
         return phonenumbers.format_number(my_number, phonenumbers.PhoneNumberFormat.NATIONAL)
     except phonenumbers.NumberParseException:
         return default_phone
@@ -264,23 +264,23 @@ def InsertDataAtLabel(df, new_label, next_to_label, data, insert_after = True):
     return df
     
 def ColumnSwap(df, col1:str, col2:str):
-	"""
-	swap position of 2 existing columns in a dataframe
-	"""
-	df = df[[col1 if col == col2 else col2 if col == col1 else col for col in df.columns]]
-	return df
-	
-	
+    """
+    swap position of 2 existing columns in a dataframe
+    """
+    df = df[[col1 if col == col2 else col2 if col == col1 else col for col in df.columns]]
+    return df
+    
+    
 def ColumnMove(df, col_name:str, new_index:int):
-	""" reposition/reorder col to new index in df """
-	col = df.pop(col_name)
-	df.insert(new_index, col.name, col)	
-	return df
+    """ reposition/reorder col to new index in df """
+    col = df.pop(col_name)
+    df.insert(new_index, col.name, col) 
+    return df
 
 def ColumnMoveToEnd(df, col_name:str):
     """ move col to end of dataframe """
     col = df.pop(col_name)
     df[col.name] = col
     return df
-	
-	
+    
+    
