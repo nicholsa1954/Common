@@ -162,7 +162,7 @@ def ParsePhoneUS(phone_number, format = 'INTERNATIONAL'):
     except phonenumbers.NumberParseException:
         return default_phone
 
-def CleanPhone(df, phone_column = 'phone'):
+def CleanPhone(df, phone_column = 'phone', format = 'INTERNATIONAL'):
     """
     Convert a ten-digit string to a more readable (xxx) xxx-xxxx format
     Args:
@@ -179,7 +179,7 @@ def CleanPhone(df, phone_column = 'phone'):
         indx = column_list.index(phone_column)
         df[phone_column] = df[phone_column].astype(str)
         df[phone_column] = df[phone_column].fillna(default_phone)
-        df['phone_clean'] = df[phone_column].apply(lambda x : ParsePhoneUS(x))
+        df['phone_clean'] = df[phone_column].apply(lambda x : ParsePhoneUS(x, format))
         df.drop(columns = [phone_column], inplace = True)
         df.rename(columns = {'phone_clean':phone_column}, inplace = True)
         df.insert(indx, phone_column, df.pop(phone_column))
