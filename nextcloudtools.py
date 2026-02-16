@@ -69,7 +69,7 @@ def UploadDfListToNextCloud(remote_filename, df_list, sheet_names, overwrite = T
         for df, sheet_name in zip(df_list, sheet_names):
             copy = df.copy(deep = True)
             print(f'Starting sheet {sheet_name} ...') 
-            if 'Timestamp' in copy.columns and copy['Timestamp'].dtype == 'datetime64[ns]':
+            if 'Timestamp' in copy.columns and copy['Timestamp'].dtype == 'datetime64[ns, UTC-06:00]':
                 copy['Timestamp'] = copy['Timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
             copy.to_excel(writer, sheet_name=sheet_name, index=False)
     
@@ -92,7 +92,7 @@ def UploadDfListToNextCloud(remote_filename, df_list, sheet_names, overwrite = T
 def WriteMailingListToNextCloud(remote_filename, email_list, overwrite = True):
     buf = io.BytesIO()
     for email in sorted(email_list):
-        buf.write(''.join([email,',\n']).encode('utf-8'))
+        buf.write(''.join([email,'\n']).encode('utf-8'))
     buf.seek(0)
     
     nxc = Nextcloud(

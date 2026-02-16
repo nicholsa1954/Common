@@ -1,4 +1,6 @@
 import re
+import email_validator
+from email_validator import validate_email, EmailNotValidError
 
 ### Source: https://medium.com/@python-javascript-php-html-css/the-best-regular-expression-for-email-address-verification-42bf83ba2885
 def ValidateEmail(email):
@@ -10,3 +12,14 @@ def ValidateEmail(email):
     if re.match(regex, email) is not None: return email
     else:
         return (f'Invalid email: {email}')
+
+
+def IsValidEmail(email):
+    if isinstance(email, float) or email == "" or email != email: 
+        return False
+    try: 
+        emailinfo = validate_email(email, check_deliverability=True)
+        return True
+    except EmailNotValidError as e:
+        print(str(e))
+        return False
