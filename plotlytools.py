@@ -78,11 +78,11 @@ def GetScatterMapbox(df, size, color, name, showlegend = True):
             opacity=1.0,
             allowoverlap=True))
 
-def GetOutlineMapbox(gdf, gjsn, colorscale, line_color, line_width):
+def GetOutlineMapbox(gdf, gjsn, colorscale, line_color, line_width, name = ''):
     return go.Choroplethmapbox(geojson = gjsn, 
         locations = gdf['id'], 
         z = gdf['z_layer'], 
-        name = '',
+        name = name,
         hoverinfo = 'skip',
         featureidkey = 'properties.id',
         colorscale = colorscale,

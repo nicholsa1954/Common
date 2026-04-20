@@ -69,8 +69,9 @@ def UploadDfListToNextCloud(remote_filename, df_list, sheet_names, overwrite = T
         for df, sheet_name in zip(df_list, sheet_names):
             copy = df.copy(deep = True)
             print(f'Starting sheet {sheet_name} ...') 
-            if 'Timestamp' in copy.columns and copy['Timestamp'].dtype == 'datetime64[ns, UTC-06:00]':
-                copy['Timestamp'] = copy['Timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
+            if 'Timestamp' in copy.columns:
+                copy['Timestamp'] = copy['Timestamp'].apply(lambda x: str(x))
+                assert copy['Timestamp'].dtype =='object', 'failed to convert timestamp'
             copy.to_excel(writer, sheet_name=sheet_name, index=False)
     
     print('Uploading to NextCloud...')
