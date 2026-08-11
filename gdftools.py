@@ -1122,10 +1122,12 @@ def GetDistrictsInBounds(datafile, rename_column, bounds_gdf=None):
 		print(" ".join(["Data file", datafile, "not found!"]))
 
 
-def PlotGDF(gdf, color = 'indigo', width = 5, height = 5, alpha = 0.65, edgecolor = 'black', linewidth = 1.0):
+def PlotGDF(gdf, title = None, color = 'indigo', width = 5, height = 5, alpha = 0.65, edgecolor = 'black', linewidth = 1.0):
     fig, ax = plt.subplots(1, 1, figsize=(width, height))
     gdf.plot(ax = ax, color = color, alpha = alpha, edgecolor = edgecolor, linewidth = linewidth)
     ax.set_axis_off()
+    if title is not None:
+        plt.title(title)
     plt.show()
 
 
